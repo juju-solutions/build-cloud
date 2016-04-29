@@ -146,6 +146,7 @@ def run_container(host, container, args):
         '-v {}:{} '   # Repository location
         '-v {}:{} '   # Temp location.
         '-v {}:{} '   # Test plan
+        '-v {}:{} '   # ssh path
         '-t {} '.format(container.user,
                         container.home,
                         container.juju_home,
@@ -156,6 +157,7 @@ def run_container(host, container, args):
                         host.juju_repository, container.juju_repository,
                         host.tmp, host.tmp,
                         os.path.dirname(args.test_plan), container.test_plans,
+                        host.ssh_path, container.ssh_home,
                         container.name))
     test_plan = os.path.join(
         container.test_plans, os.path.basename(args.test_plan))
