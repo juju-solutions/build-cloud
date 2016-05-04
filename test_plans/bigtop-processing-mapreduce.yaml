@@ -2,10 +2,6 @@
 bundle: bundle:~bigdata-dev/bigtop-processing-mapreduce
 benchmark:
     resourcemanager:
-        mrbench
-    resourcemanager:
-        nnbench
-    resourcemanager:
         terasort
 bundle_name: bigtop-processing-mapreduce
 bundle_file: bundle.yaml
