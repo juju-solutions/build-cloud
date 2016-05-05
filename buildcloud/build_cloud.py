@@ -120,12 +120,16 @@ def copy_remote_logs(models, arg):
                 files = juju_run('ssh', args, e=model)
                 files = files.strip().split()
                 for f in files:
-                    args = '{} sudo chmod  -Rf go+r {}'.format(machine, f)
-                    juju_run('ssh', args, e=model)
-                    basename = '{}--{}'.format(model, os.path.basename(f))
-                    dst_path = os.path.join(arg.log_dir, basename)
-                    args = '-- -rC {}:{} {}'.format(machine, f, dst_path)
-                    juju_run('scp', args, e=model)
+                    try:
+                        args = '{} sudo chmod  -Rf go+r {}'.format(machine, f)
+                        juju_run('ssh', args, e=model)
+                        basename = '{}--{}'.format(model, os.path.basename(f))
+                        dst_path = os.path.join(arg.log_dir, basename)
+                        args = '-- -rC {}:{} {}'.format(machine, f, dst_path)
+                        juju_run('scp', args, e=model)
+                    except subprocess.CalledProcessError:
+                        logging.warn(
+                            "Could not get logs for {} {}".format(model, f))
 
 
 @contextmanager
