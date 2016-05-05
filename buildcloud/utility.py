@@ -46,16 +46,19 @@ def run_command(command, verbose=True):
     if verbose:
         print_now('Executing: {}'.format(command))
     proc = subprocess.Popen(command, stdout=subprocess.PIPE)
+    output = ''
     while proc.poll() is None:
         status = proc.stdout.readline()
         if status:
             print_now(status)
+            output += status
     if proc.returncode != 0 and proc.returncode is not None:
         output, error = proc.communicate()
         print_now("ERROR: run_command failed: {}".format(error))
         e = subprocess.CalledProcessError(proc.returncode, command, error)
         e.stderr = error
         raise e
+    return output
 
 
 def print_now(string):
@@ -84,3 +87,12 @@ def rename_env(from_env, to_env, env_path):
     with open(env_path, 'w') as f:
         yaml.dump(env, f, indent=4, default_flow_style=False)
     return new_env
+
+
+def juju_run(command, args='', e=''):
+    e = '-e {}'.format(e) if e else e
+    return run_command('juju {} {} {}'.format(command, e, args))
+
+
+def juju_status(e=''):
+    return juju_run('status', e=e)
