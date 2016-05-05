@@ -7,12 +7,15 @@ import logging
 import os
 import subprocess
 import shutil
+import yaml
 
 from buildcloud.utility import (
     configure_logging,
     copytree_force,
     ensure_dir,
     get_juju_home,
+    juju_run,
+    juju_status,
     rename_env,
     run_command,
     temp_dir,
@@ -101,6 +104,27 @@ def env(args):
         yield host, container
 
 
+def copy_remote_logs(models, arg):
+    logging.info("Gathering remote logs.")
+    logs = [
+        '/var/log/cloud-init*.log',
+        '/var/log/juju/*.log',
+        '/var/log/syslog',
+    ]
+    for model in models:
+        destination_dir = os.path.join(arg.log_dir, model)
+        os.mkdir(destination_dir)
+        status = juju_status(e=model)
+        machines = yaml.safe_load(status)['machines'].keys()
+        for machine in machines:
+            for log in logs:
+                args = '{} sudo chmod  -Rf go+r {}'.format(machine, log)
+                juju_run(
+                    'ssh', args, e=model)
+                args = '-- -rC {}:{} {}'.format(machine, log, destination_dir)
+                juju_run('scp', args, e=model)
+
+
 @contextmanager
 def juju(host, args):
     run_command('juju --version')
@@ -119,13 +143,14 @@ def juju(host, args):
             run_command('sudo chown -R {}:{} {}'.format(
                 os.getegid(), os.getpgrp(), host.root))
         error = None
+        copy_remote_logs(host.models, args)
         for model in host.models:
             try:
                 run_command(
                     'juju destroy-environment --force --yes {}'.format(model))
             except subprocess.CalledProcessError as e:
                 error = e
-                logging.error("Error destory env failed: {}".format(model))
+                logging.error("Error destroy env failed: {}".format(model))
         if error:
             raise error
 
