@@ -112,17 +112,20 @@ def copy_remote_logs(models, arg):
         '/var/log/syslog',
     ]
     for model in models:
-        destination_dir = os.path.join(arg.log_dir, model)
-        os.mkdir(destination_dir)
         status = juju_status(e=model)
         machines = yaml.safe_load(status)['machines'].keys()
         for machine in machines:
             for log in logs:
-                args = '{} sudo chmod  -Rf go+r {}'.format(machine, log)
-                juju_run(
-                    'ssh', args, e=model)
-                args = '-- -rC {}:{} {}'.format(machine, log, destination_dir)
-                juju_run('scp', args, e=model)
+                args = '{} ls {}'.format(machine, log)
+                files = juju_run('ssh', args, e=model)
+                files = files.strip().split()
+                for f in files:
+                    args = '{} sudo chmod  -Rf go+r {}'.format(machine, f)
+                    juju_run('ssh', args, e=model)
+                    basename = '{}--{}'.format(model, os.path.basename(f))
+                    dst_path = os.path.join(arg.log_dir, basename)
+                    args = '-- -rC {}:{} {}'.format(machine, f, dst_path)
+                    juju_run('scp', args, e=model)
 
 
 @contextmanager
