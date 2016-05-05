@@ -128,7 +128,8 @@ def copy_remote_logs(models, arg):
                         args = '-- -rC {}:{} {}'.format(machine, f, dst_path)
                         juju_run('scp', args, e=model)
                     except subprocess.CalledProcessError:
-                        logging.warn("Could not get logs for {}".format(model))
+                        logging.warn(
+                            "Could not get logs for {} {}".format(model, f))
 
 
 @contextmanager
