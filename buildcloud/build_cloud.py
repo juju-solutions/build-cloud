@@ -117,7 +117,11 @@ def copy_remote_logs(models, arg):
         for machine in machines:
             for log in logs:
                 args = '{} ls {}'.format(machine, log)
-                files = juju_run('ssh', args, e=model)
+                try:
+                    files = juju_run('ssh', args, e=model)
+                except subprocess.CalledProcessError:
+                    logging.warn("Could not list remote files.")
+                    continue
                 files = files.strip().split()
                 for f in files:
                     try:
