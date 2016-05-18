@@ -1,7 +1,0 @@
-# Bundle info: https://jujucharms.com/u/bigdata-dev/bigtop-processing-mapreduce
-bundle: bundle:~bigdata-dev/bigtop-processing-mapreduce
-benchmark:
-    resourcemanager:
-        terasort
-bundle_name: bigtop-processing-mapreduce
-bundle_file: bundle.yaml
