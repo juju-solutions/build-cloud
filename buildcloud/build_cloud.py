@@ -154,7 +154,10 @@ def juju(host, args):
             run_command('sudo chown -R {}:{} {}'.format(
                 os.getegid(), os.getpgrp(), host.root))
         error = None
-        copy_remote_logs(host.models, args)
+        try:
+            copy_remote_logs(host.models, args)
+        except subprocess.CalledProcessError:
+            logging.error('Getting logs failed.')
         for model in host.models:
             try:
                 run_command(
