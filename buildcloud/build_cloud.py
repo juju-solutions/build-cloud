@@ -20,6 +20,7 @@ from buildcloud.utility import (
     run_command,
     temp_dir,
 )
+from buildcloud.host import Host
 
 
 def parse_args(argv=None):
@@ -73,11 +74,6 @@ def env(args):
             name = rename_env(model, 'cwr-', os.path.join(
                 tmp_juju_home, 'environments.yaml'))
             new_names.append(name)
-
-        Host = namedtuple(
-            'Host',
-            ['tmp_juju_home', 'juju_repository', 'test_results',
-             'tmp', 'ssh_path', 'root', 'models'])
         host = Host(
             tmp_juju_home=tmp_juju_home, juju_repository=juju_repository,
             test_results=test_results, tmp=tmp, ssh_path=ssh_path, root=root,
@@ -140,12 +136,19 @@ def copy_remote_logs(models, arg):
 def juju(host, args):
     run_command('juju --version')
     logging.info("Juju home is set to {}".format(host.tmp_juju_home))
+    bootstrapped = []
     try:
         for model in host.models:
-            run_command(
-                'juju bootstrap --show-log -e {} --constraints mem=4G'.format(
-                    model))
-            run_command('juju set-constraints -e {} mem=2G'.format(model))
+            try:
+                run_command(
+                    'juju bootstrap --show-log -e {} --constraints mem=4G'.
+                    format(model))
+                run_command('juju set-constraints -e {} mem=2G'.format(model))
+            except subprocess.CalledProcessError:
+                logging.error('Bootstrapping failed on {}'.format(model))
+                continue
+            bootstrapped.append(model)
+        host.models = bootstrapped
         yield
     finally:
         if os.getegid() == 111:
@@ -153,7 +156,6 @@ def juju(host, args):
         else:
             run_command('sudo chown -R {}:{} {}'.format(
                 os.getegid(), os.getpgrp(), host.root))
-        error = None
         try:
             copy_remote_logs(host.models, args)
         except subprocess.CalledProcessError:
@@ -162,11 +164,8 @@ def juju(host, args):
             try:
                 run_command(
                     'juju destroy-environment --force --yes {}'.format(model))
-            except subprocess.CalledProcessError as e:
-                error = e
+            except subprocess.CalledProcessError:
                 logging.error("Error destroy env failed: {}".format(model))
-        if error:
-            raise error
 
 
 def run_container(host, container, args):
@@ -223,7 +222,8 @@ def main():
     with env(args) as (host, container):
         with temp_juju_home(host.tmp_juju_home):
             with juju(host, args):
-                run_container(host, container, args)
+                if host.models:
+                    run_container(host, container, args)
 
 
 if __name__ == '__main__':
