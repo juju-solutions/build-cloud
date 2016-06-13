@@ -7,6 +7,7 @@ import logging
 import os
 import subprocess
 import shutil
+from time import time
 import yaml
 
 from buildcloud.utility import (
@@ -71,7 +72,12 @@ def env(args):
 
         new_names = []
         for model in args.model:
-            name = rename_env(model, 'cwr-', os.path.join(
+            prefix = 'cwr-'
+            if 'azure' in model.lower():
+                # Use Jenkins BUILD_NUMBER if it is available as a unique name.
+                u = os.environ.get('BUILD_NUMBER') or str(time()).split('.')[0]
+                prefix = '{}{}-'.format(prefix, u)
+            name = rename_env(model, prefix, os.path.join(
                 tmp_juju_home, 'environments.yaml'))
             new_names.append(name)
         host = Host(
