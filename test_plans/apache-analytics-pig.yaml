@@ -1,6 +1,0 @@
-bundle: bundle:apache-analytics-pig
-benchmark:
-    resourcemanager:
-        terasort
-bundle_name: apache-analytics-pig
-bundle_file: bundle.yaml

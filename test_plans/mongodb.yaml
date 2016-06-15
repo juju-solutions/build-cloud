@@ -1,7 +1,0 @@
-bundle: cs:mongodb
-benchmark:
-    mongodb:
-        perf:
-            runtime: 60
-bundle_name: mongodb
-

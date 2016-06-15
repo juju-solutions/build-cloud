@@ -1,6 +1,0 @@
-bundle: bundle:apache-ingestion-kafka
-benchmark:
-    resourcemanager:
-        terasort
-bundle_name: apache-ingestion-kafka
-bundle_file: bundle.yaml
