@@ -1,6 +1,0 @@
-bundle: bundle:apache-analytics-sql
-benchmark:
-    resourcemanager:
-        terasort
-bundle_name: apache-analytics-sql
-bundle_file: bundle.yaml
