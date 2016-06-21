@@ -39,6 +39,8 @@ def parse_args(argv=None):
     parser.add_argument(
         '--juju-home', help='Juju home directory.', default=get_juju_home())
     parser.add_argument('--log-dir', help='The directory to dump logs to.')
+    parser.add_argument('--test-id', help='Test ID.',
+                        default=os.environ['BUILD_NUMBER'])
     args = parser.parse_args(argv)
     return args
 
@@ -209,8 +211,8 @@ def run_container(host, container, args):
     if args.bundle_file:
         bundle_file = '--bundle {}'.format(args.bundle_file)
     shell_options = (
-        'sudo cwr -F -l DEBUG -v {} {} {}'.format(
-            bundle_file, ' '.join(host.models), test_plan))
+        'sudo cwr -F -l DEBUG -v {} {} {} --test-id {}'.format(
+            bundle_file, ' '.join(host.models), test_plan, args.test_id))
     command = ('sudo docker run {} sh -c'.format(
         container_options).split() + [shell_options])
     run_command(command)

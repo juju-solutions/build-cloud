@@ -23,12 +23,15 @@ class TestCloudBuild(TestCase):
         os.environ['HOME'] = home_original
 
     def test_parse_args(self):
+        build_number = os.environ.get('BUILD_NUMBER', '')
+        os.environ['BUILD_NUMBER'] = "1234"
         args = parse_args(['cwr-model', 'test-plan'])
         expected = Namespace(bundle_file='',
                              juju_home='/tmp/home/cloud-city', log_dir=None,
                              model=['cwr-model'], test_plan='test-plan',
-                             verbose=0)
+                             verbose=0, test_id="1234")
         self.assertEqual(args, expected)
+        os.environ['BUILD_NUMBER'] = build_number
 
     def get_args(self):
         return Namespace(env='juju-env')
