@@ -11,6 +11,7 @@ from shutil import (
 import subprocess
 import sys
 from tempfile import mkdtemp
+import uuid
 import yaml
 
 
@@ -96,3 +97,7 @@ def juju_run(command, args='', e=''):
 
 def juju_status(e=''):
     return juju_run('status', e=e)
+
+
+def generate_test_id():
+    return uuid.uuid4().hex
