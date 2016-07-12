@@ -220,7 +220,7 @@ def run_container(host, container, args):
     # Copy logs
     if args.log_dir:
         copytree_force(host.test_results, args.log_dir,
-                       ignore=shutil.ignore_patterns('static', '*.html'))
+                       ignore=shutil.ignore_patterns('static'))
 
 
 def main():

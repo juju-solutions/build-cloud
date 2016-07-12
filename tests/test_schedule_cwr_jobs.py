@@ -148,6 +148,7 @@ class TestSchedule(TestCase):
         job_name = get_job_name('default-azure-')
         self.assertEqual(job_name, 'cwr-azure')
 
+
 @contextmanager
 def jenkins_env():
     user = os.environ.get('JENKINS_USER')
