@@ -1,0 +1,4 @@
+# Bundle info: https://jujucharms.com/observable-kubernetes
+bundle: bundle:kubernetes-core
+bundle_name: kubernetes-core
+bundle_file: bundle.yaml
