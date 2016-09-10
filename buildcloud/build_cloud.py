@@ -41,6 +41,8 @@ def parse_args(argv=None):
     parser.add_argument('--log-dir', help='The directory to dump logs to.')
     parser.add_argument('--test-id', help='Test ID.',
                         default=os.environ['BUILD_NUMBER'])
+    parser.add_argument('--no-container', action='store_true',
+                        help='Run cwr test without container.')
     args = parser.parse_args(argv)
     return args
 
@@ -145,12 +147,16 @@ def juju(host, args):
     run_command('juju --version')
     logging.info("Juju home is set to {}".format(host.tmp_juju_home))
     bootstrapped = []
+    constraints = '--constraints mem=4G'
+    if args.no_container is True:
+        # Currently, MAAS only supports 3GiB
+        constraints = '--constraints mem=2G'
     try:
         for model in host.models:
             try:
                 run_command(
-                    'juju bootstrap --show-log -e {} --constraints mem=4G'.
-                    format(model))
+                    'juju bootstrap --show-log -e {} {}'.format(
+                            model, constraints))
                 run_command('juju set-constraints -e {} mem=2G'.format(model))
             except subprocess.CalledProcessError:
                 logging.error('Bootstrapping failed on {}'.format(model))
@@ -176,7 +182,17 @@ def juju(host, args):
                 logging.error("Error destroy env failed: {}".format(model))
 
 
-def run_container(host, container, args):
+def run_test_without_container(host, args):
+    bundle_file = ''
+    if args.bundle_file:
+        bundle_file = '--bundle {}'.format(args.bundle_file)
+    cmd = ('cwr -F -l DEBUG -v {} {} {} --test-id {} --result-output {}'.
+           format(bundle_file, ' '.join(host.models), args.test_plan,
+                  args.test_id, host.test_results))
+    run_command(cmd)
+
+
+def run_test_with_container(host, container, args):
     logging.debug("Host data: ", host)
     logging.debug("Container data: ", container)
     run_command('sudo docker pull {}'.format(container.name))
@@ -231,7 +247,10 @@ def main():
         with temp_juju_home(host.tmp_juju_home):
             with juju(host, args):
                 if host.models:
-                    run_container(host, container, args)
+                    if args.no_container is True:
+                        run_test_without_container(host, args)
+                    else:
+                        run_test_with_container(host, container, args)
 
 
 if __name__ == '__main__':
