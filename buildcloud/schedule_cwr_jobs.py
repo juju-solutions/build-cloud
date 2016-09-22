@@ -78,6 +78,8 @@ def get_job_name(controller):
         return 'cwr-joyent'
     if 'azure' in controller:
         return 'cwr-azure'
+    if 'power8' in controller:
+        return 'cwr-maas-power8'
     raise Exception('Unknown Jenkins job name requested')
 
 
