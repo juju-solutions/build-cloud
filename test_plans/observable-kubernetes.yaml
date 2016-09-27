@@ -1,4 +1,0 @@
-# Bundle info: https://jujucharms.com/observable-kubernetes
-bundle: bundle:observable-kubernetes
-bundle_name: observable-kubernetes
-bundle_file: bundle.yaml
