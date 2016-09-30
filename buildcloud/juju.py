@@ -122,63 +122,12 @@ class JujuClient:
         return self.run('status --format yaml', model=model)
 
 
-class JujuClient1x(JujuClient):
-
-    def __init__(self, juju_path, host, log_dir):
-        super(JujuClient1x, self).__init__(
-                juju_path, host, log_dir, operator_flag='-e')
-
-    def get_model(self, controller):
-        return controller
-
-    def _bootstrap(self):
-        for controller in self.host.controllers:
-            constraints = '--constraints mem=3G'
-            try:
-                run_command(
-                    '{} bootstrap --show-log -e {} {}'.format(
-                        self.juju, controller, constraints))
-                run_command('{} set-constraints -e {} mem=2G'.format(
-                    self.juju, controller))
-            except subprocess.CalledProcessError:
-                logging.error('Bootstrapping failed on {}'.format(controller))
-                continue
-            self.bootstrapped.append(controller)
-
-    def _destroy(self):
-        killed = []
-        for controller in self.bootstrapped:
-            try:
-                run_command(
-                    '{} destroy-environment --force --yes {}'.format(
-                        self.juju, controller))
-                killed.append(controller)
-            except subprocess.CalledProcessError:
-                logging.error(
-                    "Error destroy env failed: {}".format(controller))
-        self.bootstrapped = [x for x in self.bootstrapped if x not in killed]
-
-    @contextmanager
-    def bootstrap(self):
-        run_command('{} --version'.format(self.juju))
-        logging.info("Juju home is set to {}".format(self.host.tmp_juju_home))
-        try:
-            self._bootstrap()
-            yield
-        finally:
-            try:
-                self.copy_remote_logs()
-            except subprocess.CalledProcessError:
-                logging.error('Getting logs failed.')
-            self._destroy()
-
-
 def make_client(juju_path=None, *args, **kwargs):
     if juju_path is None:
         juju_path = 'juju'
     version = run_command('{} --version'.format(juju_path)).strip()
     if version.startswith('1.'):
-        return JujuClient1x(juju_path, *args, **kwargs)
+        raise ValueError('Juju 1.x is not supported.')
     elif version.startswith('2.'):
         return JujuClient(juju_path, *args, **kwargs)
     else:

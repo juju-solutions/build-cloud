@@ -7,7 +7,6 @@ from mock import (
 
 from buildcloud.juju import (
     JujuClient,
-    JujuClient1x,
     make_client,
     )
 from tests import TestCase
@@ -24,8 +23,9 @@ class TestMakeClient(TestCase):
     def test_make_client1x(self):
         with patch('buildcloud.juju.run_command', autospec=True,
                    return_value='1.23'):
-            client = make_client('/tmp/juju', 'host', 'logdir')
-        self.assertIsInstance(client, JujuClient1x)
+            with self.assertRaisesRegexp(
+                    ValueError, 'Juju 1.x is not supported'):
+                make_client('/tmp/juju', 'host', 'logdir')
 
 
 class TestJujuClient(TestCase):
