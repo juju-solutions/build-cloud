@@ -5,31 +5,31 @@ from contextlib import contextmanager
 from collections import namedtuple
 import logging
 import os
-import subprocess
 import shutil
+from tempfile import mkdtemp
 from time import time
-import yaml
 
+from buildcloud.host import Host
+from buildcloud.juju import make_client
 from buildcloud.utility import (
     configure_logging,
     copytree_force,
     ensure_dir,
     get_juju_home,
-    juju_run,
-    juju_status,
     rename_env,
     run_command,
     temp_dir,
 )
-from buildcloud.host import Host
 
 
 def parse_args(argv=None):
     parser = ArgumentParser()
     parser.add_argument(
-        'model', nargs='+', help='Name of models to use')
+        'controllers', nargs='+', help='Name of controllers to use')
     parser.add_argument(
         'test_plan', help='File path to test plan.')
+    parser.add_argument(
+        '--juju-path', help='Path to juju.', default='juju')
     parser.add_argument(
         '--bundle-file',
         help='Name of bundle file to deploy, if url points to a bundle '
@@ -44,17 +44,31 @@ def parse_args(argv=None):
     parser.add_argument('--no-container', action='store_true',
                         help='Run cwr test without container.')
     args = parser.parse_args(argv)
+    if args.juju_path != 'juju':
+        args.juju_path = os.path.realpath(args.juju_path)
     return args
 
 
 @contextmanager
-def temp_juju_home(juju_home):
-    org_juju_home = os.environ.get('JUJU_HOME')
+def temp_juju_home(juju_home, juju_path):
+    org_juju_home = os.environ.get('JUJU_HOME', '')
+    org_juju_data = os.environ.get('JUJU_DATA', '')
+    org_path = os.environ.get('PATH', '')
     os.environ["JUJU_HOME"] = juju_home
+    os.environ["JUJU_DATA"] = juju_home
+
+    temp_dir = mkdtemp(prefix='cwr_tst_')
+    temp_name = os.path.join(temp_dir, 'juju')
+    os.symlink(juju_path, temp_name)
+    if juju_path != 'juju':
+        os.environ['PATH'] = '{}{}{}'.format(temp_dir, os.pathsep, org_path)
+
     try:
         yield
     finally:
-        os.environ['JUJU_HOME'] = org_juju_home if org_juju_home else ''
+        os.environ['JUJU_HOME'] = org_juju_home
+        os.environ['JUJU_DATA'] = org_juju_data
+        shutil.rmtree(temp_dir)
 
 
 @contextmanager
@@ -75,19 +89,19 @@ def env(args):
         ssh_path = os.path.join(tmp, 'ssh')
 
         new_names = []
-        for model in args.model:
+        for controller in args.controllers:
             prefix = 'cwr-'
-            if 'azure' in model.lower():
+            if 'azure' in controller.lower():
                 # Use Jenkins BUILD_NUMBER if it is available as a unique name.
                 u = os.environ.get('BUILD_NUMBER') or str(time()).split('.')[0]
                 prefix = '{}{}-'.format(prefix, u)
-            name = rename_env(model, prefix, os.path.join(
+            name = rename_env(controller, prefix, os.path.join(
                 tmp_juju_home, 'environments.yaml'))
             new_names.append(name)
-        host = Host(
-            tmp_juju_home=tmp_juju_home, juju_repository=juju_repository,
-            test_results=test_results, tmp=tmp, ssh_path=ssh_path, root=root,
-            models=new_names)
+        host = Host(tmp_juju_home=tmp_juju_home,
+                    juju_repository=juju_repository, test_results=test_results,
+                    tmp=tmp, ssh_path=ssh_path, root=root,
+                    controllers=new_names)
         Container = namedtuple(
             'Container',
             ['user', 'name', 'home', 'ssh_home', 'juju_home', 'test_results',
@@ -110,84 +124,12 @@ def env(args):
         yield host, container
 
 
-def copy_remote_logs(models, arg):
-    logging.info("Gathering remote logs.")
-    logs = [
-        '/var/log/cloud-init*.log',
-        '/var/log/juju/*.log',
-        '/var/log/syslog',
-    ]
-    for model in models:
-        status = juju_status(e=model)
-        machines = yaml.safe_load(status)['machines'].keys()
-        for machine in machines:
-            for log in logs:
-                args = '{} ls {}'.format(machine, log)
-                try:
-                    files = juju_run('ssh', args, e=model)
-                except subprocess.CalledProcessError:
-                    logging.warn("Could not list remote files.")
-                    continue
-                files = files.strip().split()
-                for f in files:
-                    try:
-                        args = '{} sudo chmod  -Rf go+r {}'.format(machine, f)
-                        juju_run('ssh', args, e=model)
-                        basename = '{}--{}'.format(model, os.path.basename(f))
-                        dst_path = os.path.join(arg.log_dir, basename)
-                        args = '-- -rC {}:{} {}'.format(machine, f, dst_path)
-                        juju_run('scp', args, e=model)
-                    except subprocess.CalledProcessError:
-                        logging.warn(
-                            "Could not get logs for {} {}".format(model, f))
-
-
-@contextmanager
-def juju(host, args):
-    run_command('juju --version')
-    logging.info("Juju home is set to {}".format(host.tmp_juju_home))
-    bootstrapped = []
-    constraints = '--constraints mem=4G'
-    if args.no_container is True:
-        # Currently, MAAS only supports 3GiB
-        constraints = '--constraints mem=2G'
-    try:
-        for model in host.models:
-            try:
-                run_command(
-                    'juju bootstrap --show-log -e {} {}'.format(
-                            model, constraints))
-                run_command('juju set-constraints -e {} mem=2G'.format(model))
-            except subprocess.CalledProcessError:
-                logging.error('Bootstrapping failed on {}'.format(model))
-                continue
-            bootstrapped.append(model)
-        host.models = bootstrapped
-        yield
-    finally:
-        if os.getegid() == 111:
-            run_command('sudo chown -R jenkins:jenkins {}'.format(host.root))
-        else:
-            run_command('sudo chown -R {}:{} {}'.format(
-                os.getegid(), os.getpgrp(), host.root))
-        try:
-            copy_remote_logs(host.models, args)
-        except subprocess.CalledProcessError:
-            logging.error('Getting logs failed.')
-        for model in host.models:
-            try:
-                run_command(
-                    'juju destroy-environment --force --yes {}'.format(model))
-            except subprocess.CalledProcessError:
-                logging.error("Error destroy env failed: {}".format(model))
-
-
 def run_test_without_container(host, args):
     bundle_file = ''
     if args.bundle_file:
         bundle_file = '--bundle {}'.format(args.bundle_file)
     cmd = ('cwr -F -l DEBUG -v {} {} {} --test-id {} --result-output {}'.
-           format(bundle_file, ' '.join(host.models), args.test_plan,
+           format(bundle_file, ' '.join(host.controllers), args.test_plan,
                   args.test_id, host.test_results))
     run_command(cmd)
 
@@ -228,7 +170,7 @@ def run_test_with_container(host, container, args):
         bundle_file = '--bundle {}'.format(args.bundle_file)
     shell_options = (
         'sudo cwr -F -l DEBUG -v {} {} {} --test-id {}'.format(
-            bundle_file, ' '.join(host.models), test_plan, args.test_id))
+            bundle_file, ' '.join(host.controllers), test_plan, args.test_id))
     command = ('sudo docker run {} sh -c'.format(
         container_options).split() + [shell_options])
     run_command(command)
@@ -244,9 +186,10 @@ def main():
     log_level = max(logging.WARN - args.verbose * 10, logging.DEBUG)
     configure_logging(log_level)
     with env(args) as (host, container):
-        with temp_juju_home(host.tmp_juju_home):
-            with juju(host, args):
-                if host.models:
+        with temp_juju_home(host.tmp_juju_home, args.juju_path):
+            client = make_client(args.juju_path, host, args.log_dir)
+            with client.bootstrap():
+                if host.controllers:
                     if args.no_container is True:
                         run_test_without_container(host, args)
                     else:

@@ -9,7 +9,7 @@ from shutil import (
     rmtree,
 )
 import subprocess
-import sys
+from time import time
 from tempfile import mkdtemp
 import uuid
 import yaml
@@ -21,7 +21,10 @@ def temp_dir(parent=None):
     try:
         yield directory
     finally:
-        rmtree(directory)
+        try:
+            rmtree(directory)
+        except OSError:
+            run_command('sudo rm -rf {}'.format(directory))
 
 
 def configure_logging(log_level):
@@ -45,26 +48,21 @@ def run_command(command, verbose=True):
     if isinstance(command, str):
         command = command.split()
     if verbose:
-        print_now('Executing: {}'.format(command))
+        logging.info('Executing: {}'.format(command))
     proc = subprocess.Popen(command, stdout=subprocess.PIPE)
     output = ''
     while proc.poll() is None:
         status = proc.stdout.readline()
         if status:
-            print_now(status)
+            logging.info(status.rstrip())
             output += status
     if proc.returncode != 0 and proc.returncode is not None:
         output, error = proc.communicate()
-        print_now("ERROR: run_command failed: {}".format(error))
+        logging.info("ERROR: run_command failed: {}".format(error))
         e = subprocess.CalledProcessError(proc.returncode, command, error)
         e.stderr = error
         raise e
     return output
-
-
-def print_now(string):
-    print(string)
-    sys.stdout.flush()
 
 
 def get_juju_home():
@@ -101,3 +99,23 @@ def juju_status(e=''):
 
 def generate_test_id():
     return uuid.uuid4().hex
+
+
+def cloud_from_env(env):
+    if 'aws' in env.lower():
+        if 'china' in env.lower():
+            return 'aws-china'
+        return 'aws/us-west-1'
+    if 'azure' in env.lower():
+        return 'azure/westus'
+    if 'gce' in env.lower() or 'google' in env.lower():
+        return 'google/europe-west1'
+    if 'joyent' in env.lower():
+        return 'joyent/us-sw-1'
+    if 'power8' in env.lower():
+        return 'borbein-maas'
+
+
+def get_temp_controller_name(controller_name):
+    suffix = os.environ.get('BUILD_NUMBER') or str(time()).split('.')[0]
+    return "{}-{}".format(controller_name, suffix)

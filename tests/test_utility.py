@@ -1,6 +1,5 @@
 import os
 import subprocess
-from unittest import TestCase
 
 from mock import patch
 import yaml
@@ -11,6 +10,7 @@ from buildcloud.utility import (
     run_command,
     temp_dir,
 )
+from tests import TestCase
 
 
 class TestUtility(TestCase):
@@ -47,8 +47,7 @@ class TestUtility(TestCase):
         cmd = ['foo bar']
         with patch('subprocess.Popen', autospec=True,
                    return_value=proc) as p_mock:
-            with patch('buildcloud.utility.print_now'):
-                run_command(cmd, verbose=True)
+            run_command(cmd, verbose=True)
         p_mock.assert_called_once_with(cmd, stdout=subprocess.PIPE)
 
     def test_run_command_verbose(self):
@@ -56,10 +55,8 @@ class TestUtility(TestCase):
         cmd = ['foo', 'bar']
         with patch('subprocess.Popen', autospec=True,
                    return_value=proc) as p_mock:
-            with patch('buildcloud.utility.print_now') as pr_mock:
-                run_command(cmd, verbose=True)
+            run_command(cmd, verbose=True)
         p_mock.assert_called_once_with(cmd, stdout=subprocess.PIPE)
-        pr_mock.assert_called_once_with("Executing: ['foo', 'bar']")
 
     def test_copytree_force(self):
         with temp_dir() as src:

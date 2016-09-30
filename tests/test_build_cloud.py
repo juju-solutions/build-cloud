@@ -28,9 +28,10 @@ class TestCloudBuild(TestCase):
         args = parse_args(['cwr-model', 'test-plan'])
         expected = Namespace(bundle_file='',
                              juju_home='/tmp/home/cloud-city',
+                             juju_path='juju',
                              no_container=False,
                              log_dir=None,
-                             model=['cwr-model'],
+                             controllers=['cwr-model'],
                              test_plan='test-plan',
                              verbose=0, test_id="1234")
         self.assertEqual(args, expected)

@@ -1,2 +1,4 @@
 python-jenkins
 pyyaml
+mock
+cloud-weather-report
