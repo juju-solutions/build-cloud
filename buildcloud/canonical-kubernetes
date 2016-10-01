@@ -1,4 +1,0 @@
-# Bundle info: https://jujucharms.com/canonical-kubernetes
-bundle: bundle:canonical-kubernetes
-bundle_name: canonical-kubernetes
-bundle_file: bundle.yaml
