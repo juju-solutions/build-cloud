@@ -28,9 +28,9 @@ class JujuClient:
             constraints = '--constraints mem=3G'
             cloud = cloud_from_env(controller)
             controller = "cwr-{}".format(controller)
-            self.host.controllers[i] = self.get_model(controller)
             if 'azure' in controller.lower():
                 controller = get_temp_controller_name(controller)
+            self.host.controllers[i] = self.get_model(controller)
             try:
                 run_command(
                     '{} bootstrap --show-log {} {} {} --config '
