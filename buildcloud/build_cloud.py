@@ -7,7 +7,6 @@ import logging
 import os
 import shutil
 from tempfile import mkdtemp
-from time import time
 
 from buildcloud.host import Host
 from buildcloud.juju import make_client
@@ -91,10 +90,6 @@ def env(args):
         new_names = []
         for controller in args.controllers:
             prefix = 'cwr-'
-            if 'azure' in controller.lower():
-                # Use Jenkins BUILD_NUMBER if it is available as a unique name.
-                u = os.environ.get('BUILD_NUMBER') or str(time()).split('.')[0]
-                prefix = '{}{}-'.format(prefix, u)
             name = rename_env(controller, prefix, os.path.join(
                 tmp_juju_home, 'environments.yaml'))
             new_names.append(name)

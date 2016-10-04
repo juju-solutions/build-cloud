@@ -10,7 +10,6 @@ from buildcloud.juju import (
     make_client,
     )
 from tests import TestCase
-from tests.test_schedule_cwr_jobs import jenkins_env
 
 
 class TestMakeClient(TestCase):
@@ -35,19 +34,18 @@ class TestJujuClient(TestCase):
         fake_host = FakeHost()
         jc = JujuClient('/foo/bar', fake_host, None)
         with patch('buildcloud.juju.run_command', autospec=True) as jrc_mock:
-            with jenkins_env():
-                jc._bootstrap()
+            jc._bootstrap()
         calls = ([
             call('/foo/bar bootstrap --show-log --constraints mem=3G '
-                 'cwr-gce google/europe-west1 --config test-mode=true '
-                 '--default-model cwr-gce'),
+                 'gce google/europe-west1 --config test-mode=true '
+                 '--default-model gce'),
             call('/foo/bar bootstrap --show-log --constraints mem=3G '
-                 'cwr-azure-1234 azure/westus --config test-mode=true '
-                 '--default-model cwr-azure-1234')])
+                 'azure azure/westus --config test-mode=true '
+                 '--default-model azure')])
         self.assertEqual(jrc_mock.call_args_list, calls)
-        self.assertEqual(jc.bootstrapped, ['cwr-gce', 'cwr-azure-1234'])
+        self.assertEqual(jc.bootstrapped, ['gce', 'azure'])
         self.assertEqual(jc.host.controllers,
-                         ['cwr-gce:cwr-gce', 'cwr-azure-1234:cwr-azure-1234'])
+                         ['gce:gce', 'azure:azure'])
 
     def test__bootstrap_exception(self):
         fake_host = FakeHost()
@@ -55,19 +53,16 @@ class TestJujuClient(TestCase):
         with patch('buildcloud.juju.run_command', autospec=True,
                    side_effect=[None, subprocess.CalledProcessError('', '')]
                    ) as jrc_mock:
-            with patch('buildcloud.juju.get_temp_controller_name',
-                       autospec=True, return_value='baz') as gtcn_mock:
-                jc._bootstrap()
+            jc._bootstrap()
         calls = ([
             call('/foo/bar bootstrap --show-log --constraints mem=3G '
-                 'cwr-gce google/europe-west1 --config test-mode=true '
-                 '--default-model cwr-gce'),
+                 'gce google/europe-west1 --config test-mode=true '
+                 '--default-model gce'),
             call('/foo/bar bootstrap --show-log --constraints mem=3G '
-                 'baz azure/westus --config test-mode=true --default-model '
-                 'baz')])
+                 'azure azure/westus --config test-mode=true --default-model '
+                 'azure')])
         self.assertEqual(jrc_mock.call_args_list, calls)
-        self.assertEqual(jc.bootstrapped, ['cwr-gce'])
-        gtcn_mock.assert_called_once_with('cwr-azure')
+        self.assertEqual(jc.bootstrapped, ['gce'])
 
     def test_bootstrap(self):
         fake_host = FakeHost()
