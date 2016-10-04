@@ -5,7 +5,6 @@ import subprocess
 import yaml
 
 from buildcloud.utility import (
-    get_temp_controller_name,
     cloud_from_env,
     run_command,
 )
@@ -27,9 +26,6 @@ class JujuClient:
         for i, controller in enumerate(self.host.controllers):
             constraints = '--constraints mem=3G'
             cloud = cloud_from_env(controller)
-            controller = "cwr-{}".format(controller)
-            if 'azure' in controller.lower():
-                controller = get_temp_controller_name(controller)
             self.host.controllers[i] = self.get_model(controller)
             try:
                 run_command(
