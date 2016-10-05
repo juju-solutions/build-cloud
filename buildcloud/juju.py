@@ -15,24 +15,33 @@ __metaclass__ = type
 
 class JujuClient:
 
-    def __init__(self, juju_path, host, log_dir, operator_flag='-m'):
+    def __init__(self, juju_path, host, log_dir, operator_flag='-m',
+                 bootstrap_constraints=None, constraints=None):
         self.juju = juju_path
         self.host = host
         self.log_dir = log_dir
         self.operator_flag = operator_flag
         self.bootstrapped = []
+        self.bootstrap_constraints = bootstrap_constraints
+        self.constraints = constraints
 
     def _bootstrap(self):
         for i, controller in enumerate(self.host.controllers):
-            constraints = '--constraints mem=3G'
+            args = []
+            if self.constraints:
+                args.append('--constraints {}'.format(self.constraints))
+            if self.bootstrap_constraints:
+                args.append('--bootstrap-constraints {}'.format(
+                        self.bootstrap_constraints))
             cloud = cloud_from_env(controller)
             self.host.controllers[i] = self.get_model(controller)
+            args = ' {}'.format(' '.join(args)) if args else ''
             try:
                 run_command(
-                    '{} bootstrap --show-log {} {} {} --config '
-                    'test-mode=true --default-model {}'.format(
-                            self.juju, constraints, controller, cloud,
-                            controller))
+                    '{} bootstrap --show-log {} {} --config '
+                    'test-mode=true --default-model {} --no-gui{}'.format(
+                            self.juju, controller, cloud, controller,
+                            args))
             except subprocess.CalledProcessError:
                 logging.error('Bootstrapping failed on {}'.format(
                         controller))
@@ -118,13 +127,16 @@ class JujuClient:
         return self.run('status --format yaml', model=model)
 
 
-def make_client(juju_path=None, *args, **kwargs):
+def make_client(juju_path, host, log_dir, bootstrap_constraints,
+                constraints):
     if juju_path is None:
         juju_path = 'juju'
     version = run_command('{} --version'.format(juju_path)).strip()
     if version.startswith('1.'):
         raise ValueError('Juju 1.x is not supported.')
     elif version.startswith('2.'):
-        return JujuClient(juju_path, *args, **kwargs)
+        return JujuClient(juju_path, host, log_dir=log_dir,
+                          bootstrap_constraints=bootstrap_constraints,
+                          constraints=constraints)
     else:
         raise ValueError('Unknown juju version')

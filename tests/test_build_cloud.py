@@ -26,7 +26,9 @@ class TestCloudBuild(TestCase):
         build_number = os.environ.get('BUILD_NUMBER', '')
         os.environ['BUILD_NUMBER'] = "1234"
         args = parse_args(['cwr-model', 'test-plan'])
-        expected = Namespace(bundle_file='',
+        expected = Namespace(bootstrap_constraints=None,
+                             bundle_file='',
+                             constraints='mem=3G',
                              juju_home='/tmp/home/cloud-city',
                              juju_path='juju',
                              no_container=False,
