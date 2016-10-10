@@ -46,6 +46,7 @@ def make_parameters(test_plan, args, controller, test_id):
         'bundle_name': plan['bundle_name'],
         'bundle_file': plan.get('bundle_file'),
         'test_id': test_id,
+        'test_label': plan.get('test_label'),
     }
     # Remove empty values
     parameters = {k: v for k, v in parameters.items() if v}
