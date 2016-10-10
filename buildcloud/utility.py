@@ -114,6 +114,9 @@ def cloud_from_env(env):
         return 'joyent/us-sw-1'
     if 'power8' in env.lower():
         return 'borbein-maas'
+    if 'ob-maas' in env.lower():
+        return 'ob-maas'
+    return None
 
 
 def get_temp_controller_name(controller_name):
