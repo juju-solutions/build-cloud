@@ -42,6 +42,10 @@ def parse_args(argv=None):
                         default=os.environ['BUILD_NUMBER'])
     parser.add_argument('--no-container', action='store_true',
                         help='Run cwr test without container.')
+    parser.add_argument('--bootstrap-constraints',
+                        help='Bootstrap machine constraints')
+    parser.add_argument('--constraints',
+                        help='Model constraints', default='mem=3G')
     args = parser.parse_args(argv)
     if args.juju_path != 'juju':
         args.juju_path = os.path.realpath(args.juju_path)
@@ -182,7 +186,9 @@ def main():
     configure_logging(log_level)
     with env(args) as (host, container):
         with temp_juju_home(host.tmp_juju_home, args.juju_path):
-            client = make_client(args.juju_path, host, args.log_dir)
+            client = make_client(args.juju_path, host, args.log_dir,
+                                 args.bootstrap_constraints,
+                                 args.constraints)
             with client.bootstrap():
                 if host.controllers:
                     if args.no_container is True:

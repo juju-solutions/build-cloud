@@ -17,7 +17,7 @@ class TestMakeClient(TestCase):
     def test_make_client(self):
         with patch('buildcloud.juju.run_command', autospec=True,
                    return_value='2.00'):
-            client = make_client('/tmp/juju', 'host', 'logdir')
+            client = make_client('/tmp/juju', 'host', 'logdir', None, None)
         self.assertIsInstance(client, JujuClient)
 
     def test_make_client1x(self):
@@ -25,23 +25,24 @@ class TestMakeClient(TestCase):
                    return_value='1.23'):
             with self.assertRaisesRegexp(
                     ValueError, 'Juju 1.x is not supported'):
-                make_client('/tmp/juju', 'host', 'logdir')
+                make_client('/tmp/juju', 'host', 'logdir', None, None)
 
 
 class TestJujuClient(TestCase):
 
     def test__bootstrap(self):
         fake_host = FakeHost()
-        jc = JujuClient('/foo/bar', fake_host, None)
+        jc = JujuClient('/foo/bar', fake_host, None, constraints='mem=3G')
         with patch('buildcloud.juju.run_command', autospec=True) as jrc_mock:
             jc._bootstrap()
         calls = ([
-            call('/foo/bar bootstrap --show-log --constraints mem=3G '
-                 'gce google/europe-west1 --config test-mode=true '
-                 '--default-model gce'),
-            call('/foo/bar bootstrap --show-log --constraints mem=3G '
-                 'azure azure/westus --config test-mode=true '
-                 '--default-model azure')])
+            call('/foo/bar bootstrap --show-log gce google/europe-west1 '
+                 '--config test-mode=true --default-model gce --no-gui '
+                 '--constraints mem=3G'),
+            call('/foo/bar bootstrap --show-log azure azure/westus --config '
+                 'test-mode=true --default-model azure --no-gui '
+                 '--constraints mem=3G')
+        ])
         self.assertEqual(jrc_mock.call_args_list, calls)
         self.assertEqual(jc.bootstrapped, ['gce', 'azure'])
         self.assertEqual(jc.host.controllers,
@@ -49,20 +50,75 @@ class TestJujuClient(TestCase):
 
     def test__bootstrap_exception(self):
         fake_host = FakeHost()
-        jc = JujuClient('/foo/bar', fake_host, None)
+        jc = JujuClient('/foo/bar', fake_host, None, constraints='mem=3G')
         with patch('buildcloud.juju.run_command', autospec=True,
                    side_effect=[None, subprocess.CalledProcessError('', '')]
                    ) as jrc_mock:
             jc._bootstrap()
         calls = ([
-            call('/foo/bar bootstrap --show-log --constraints mem=3G '
-                 'gce google/europe-west1 --config test-mode=true '
-                 '--default-model gce'),
-            call('/foo/bar bootstrap --show-log --constraints mem=3G '
-                 'azure azure/westus --config test-mode=true --default-model '
-                 'azure')])
+            call('/foo/bar bootstrap --show-log gce google/europe-west1 '
+                 '--config test-mode=true --default-model gce --no-gui '
+                 '--constraints mem=3G'),
+            call('/foo/bar bootstrap --show-log azure azure/westus --config '
+                 'test-mode=true --default-model azure --no-gui '
+                 '--constraints mem=3G')
+        ])
         self.assertEqual(jrc_mock.call_args_list, calls)
         self.assertEqual(jc.bootstrapped, ['gce'])
+
+    def test__bootstrap_bootstrap_constraints(self):
+        fake_host = FakeHost()
+        jc = JujuClient('/foo/bar', fake_host, None,
+                        bootstrap_constraints='tags=ob')
+        with patch('buildcloud.juju.run_command', autospec=True) as jrc_mock:
+            jc._bootstrap()
+        calls = ([
+            call('/foo/bar bootstrap --show-log gce google/europe-west1 '
+                 '--config test-mode=true --default-model gce --no-gui '
+                 '--bootstrap-constraints tags=ob'),
+            call('/foo/bar bootstrap --show-log azure azure/westus --config '
+                 'test-mode=true --default-model azure --no-gui '
+                 '--bootstrap-constraints tags=ob')
+        ])
+        self.assertEqual(jrc_mock.call_args_list, calls)
+        self.assertEqual(jc.bootstrapped, ['gce', 'azure'])
+        self.assertEqual(jc.host.controllers,
+                         ['gce:gce', 'azure:azure'])
+
+    def test__bootstrap_bootstrap_constraints_model_constraints(self):
+        fake_host = FakeHost()
+        jc = JujuClient('/foo/bar', fake_host, None,
+                        bootstrap_constraints='tags=ob',
+                        constraints='mem=2G')
+        with patch('buildcloud.juju.run_command', autospec=True) as jrc_mock:
+            jc._bootstrap()
+        calls = ([
+            call('/foo/bar bootstrap --show-log gce google/europe-west1 '
+                 '--config test-mode=true --default-model gce --no-gui '
+                 '--constraints mem=2G --bootstrap-constraints tags=ob'),
+            call('/foo/bar bootstrap --show-log azure azure/westus --config '
+                 'test-mode=true --default-model azure --no-gui '
+                 '--constraints mem=2G --bootstrap-constraints tags=ob')
+        ])
+        self.assertEqual(jrc_mock.call_args_list, calls)
+        self.assertEqual(jc.bootstrapped, ['gce', 'azure'])
+        self.assertEqual(jc.host.controllers,
+                         ['gce:gce', 'azure:azure'])
+
+    def test__bootstrap_no_constraints(self):
+        fake_host = FakeHost()
+        jc = JujuClient('/foo/bar', fake_host, None)
+        with patch('buildcloud.juju.run_command', autospec=True) as jrc_mock:
+            jc._bootstrap()
+        calls = ([
+            call('/foo/bar bootstrap --show-log gce google/europe-west1 '
+                 '--config test-mode=true --default-model gce --no-gui'),
+            call('/foo/bar bootstrap --show-log azure azure/westus --config '
+                 'test-mode=true --default-model azure --no-gui')])
+        self.assertEqual(jrc_mock.call_args_list, calls)
+        self.assertEqual(jc.bootstrapped, ['gce', 'azure'])
+        self.assertEqual(jc.host.controllers,
+                         ['gce:gce', 'azure:azure'])
 
     def test_bootstrap(self):
         fake_host = FakeHost()
