@@ -1,0 +1,3 @@
+bundle: bundle:~/canonical-storage/ceph-with-dash
+bundle_name: ceph-with-dash
+test_label: orangebox-test
