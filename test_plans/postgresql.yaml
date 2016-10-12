@@ -1,0 +1,3 @@
+bundle: cs:postgresql
+bundle_name: postgresql
+url: https://jujucharms.com/postgresql/

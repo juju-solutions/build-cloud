@@ -1,0 +1,3 @@
+bundle: cs:docker
+bundle_name: docker
+url: https://jujucharms.com/docker/
