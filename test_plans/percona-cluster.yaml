@@ -1,0 +1,3 @@
+bundle: cs:percona-cluster
+bundle_name: percona-cluster
+url: https://jujucharms.com/percona-cluster/

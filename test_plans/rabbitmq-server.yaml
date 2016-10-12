@@ -1,0 +1,3 @@
+bundle: cs:rabbitmq-server
+bundle_name: rabbitmq-server
+url: https://jujucharms.com/rabbitmq-server/
