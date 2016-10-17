@@ -123,17 +123,17 @@ def env(args):
         yield host, container
 
 
-def run_test_without_container(host, args):
+def run_test_without_container(host, args, bootstrapped_controllers):
     bundle_file = ''
     if args.bundle_file:
         bundle_file = '--bundle {}'.format(args.bundle_file)
     cmd = ('cwr -F -l DEBUG -v {} {} {} --test-id {} --result-output {}'.
-           format(bundle_file, ' '.join(host.controllers), args.test_plan,
-                  args.test_id, host.test_results))
+           format(bundle_file, ' '.join(bootstrapped_controllers),
+                  args.test_plan, args.test_id, host.test_results))
     run_command(cmd)
 
 
-def run_test_with_container(host, container, args):
+def run_test_with_container(host, container, args, bootstrapped_controllers):
     logging.debug("Host data: ", host)
     logging.debug("Container data: ", container)
     run_command('sudo docker pull {}'.format(container.name))
@@ -169,7 +169,8 @@ def run_test_with_container(host, container, args):
         bundle_file = '--bundle {}'.format(args.bundle_file)
     shell_options = (
         'sudo cwr -F -l DEBUG -v {} {} {} --test-id {}'.format(
-            bundle_file, ' '.join(host.controllers), test_plan, args.test_id))
+            bundle_file, ' '.join(bootstrapped_controllers),
+            test_plan, args.test_id))
     command = ('sudo docker run {} sh -c'.format(
         container_options).split() + [shell_options])
     run_command(command)
@@ -189,12 +190,14 @@ def main():
             client = make_client(args.juju_path, host, args.log_dir,
                                  args.bootstrap_constraints,
                                  args.constraints)
-            with client.bootstrap():
-                if host.controllers:
+            with client.bootstrap() as bootstrapped_controllers:
+                if bootstrapped_controllers:
                     if args.no_container is True:
-                        run_test_without_container(host, args)
+                        run_test_without_container(
+                            host, args, bootstrapped_controllers)
                     else:
-                        run_test_with_container(host, container, args)
+                        run_test_with_container(
+                            host, container, args, bootstrapped_controllers)
 
 
 if __name__ == '__main__':

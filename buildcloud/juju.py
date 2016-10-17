@@ -68,7 +68,7 @@ class JujuClient:
         logging.info("JUJU_DATA is set to {}".format(self.host.tmp_juju_home))
         try:
             self._bootstrap()
-            yield
+            yield self.bootstrapped
         finally:
             try:
                 self.copy_remote_logs()
