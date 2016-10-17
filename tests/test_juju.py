@@ -126,16 +126,42 @@ class TestJujuClient(TestCase):
         with patch('buildcloud.juju.run_command', autospec=True) as jrc_mock:
             with patch.object(jc, 'copy_remote_logs', autospec=True
                               ) as crl_mock:
-                with patch.object(jc, '_bootstrap', autospec=True
-                                  ) as b_mock:
-                    with patch.object(jc, '_destroy', autospec=True
-                                      ) as d_mock:
-                        with jc.bootstrap():
-                            pass
-        jrc_mock.assert_called_once_with('/foo/bar/juju --version')
+                with patch.object(jc, '_destroy', autospec=True) as d_mock:
+                    with jc.bootstrap() as bootstrapped:
+                        pass
+        calls = ([
+            call('/foo/bar/juju --version'),
+            call('/foo/bar/juju bootstrap --show-log gce google/europe-west1 '
+                 '--config test-mode=true --default-model gce --no-gui'),
+            call('/foo/bar/juju bootstrap --show-log azure azure/westus '
+                 '--config test-mode=true --default-model azure --no-gui')])
+        self.assertEqual(jrc_mock.call_args_list, calls)
         crl_mock.assert_called_once_with()
-        b_mock.assert_called_once_with()
         d_mock.assert_called_once_with()
+        self.assertEqual(bootstrapped, ['gce', 'azure'])
+
+    def test_bootstrap_with_cloud_fail(self):
+        fake_host = FakeHost()
+        jc = JujuClient('/foo/bar/juju', fake_host, None)
+        with patch('buildcloud.juju.run_command', autospec=True,
+                   side_effect=[None, None,
+                                subprocess.CalledProcessError('', '')]
+                   ) as jrc_mock:
+            with patch.object(jc, 'copy_remote_logs', autospec=True
+                              ) as crl_mock:
+                with patch.object(jc, '_destroy', autospec=True) as d_mock:
+                    with jc.bootstrap() as bootstrapped:
+                        pass
+        calls = ([
+            call('/foo/bar/juju --version'),
+            call('/foo/bar/juju bootstrap --show-log gce google/europe-west1 '
+                 '--config test-mode=true --default-model gce --no-gui'),
+            call('/foo/bar/juju bootstrap --show-log azure azure/westus '
+                 '--config test-mode=true --default-model azure --no-gui')])
+        self.assertEqual(jrc_mock.call_args_list, calls)
+        crl_mock.assert_called_once_with()
+        d_mock.assert_called_once_with()
+        self.assertEqual(bootstrapped, ['gce'])
 
     def test_copy_remote_logs(self):
         fake_host = FakeHost()
