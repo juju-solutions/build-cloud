@@ -1,0 +1,21 @@
+bundle: bundle:spark-processing
+benchmark:
+    spark:
+        logisticregression
+    spark:
+        matrixfactorization
+    spark:
+        pagerank
+    spark:
+        sql
+    spark:
+        streaming
+    spark:
+        svdplusplus
+    spark:
+        svm
+    spark:
+        trianglecount
+bundle_name: spark-processing
+bundle_file: bundle.yaml
+url: https://jujucharms.com/spark-processing/
