@@ -138,7 +138,7 @@ class TestJujuClient(TestCase):
         self.assertEqual(jrc_mock.call_args_list, calls)
         crl_mock.assert_called_once_with()
         d_mock.assert_called_once_with()
-        self.assertEqual(bootstrapped, ['gce', 'azure'])
+        self.assertEqual(bootstrapped, ['gce:gce', 'azure:azure'])
 
     def test_bootstrap_with_cloud_fail(self):
         fake_host = FakeHost()
@@ -161,7 +161,7 @@ class TestJujuClient(TestCase):
         self.assertEqual(jrc_mock.call_args_list, calls)
         crl_mock.assert_called_once_with()
         d_mock.assert_called_once_with()
-        self.assertEqual(bootstrapped, ['gce'])
+        self.assertEqual(bootstrapped, ['gce:gce'])
 
     def test_copy_remote_logs(self):
         fake_host = FakeHost()
