@@ -1,0 +1,7 @@
+bundle: bundle:~bigdata-charmers/kafka-ingestion-1
+benchmark:
+    resourcemanager:
+        mrbench
+bundle_name: kafka-ingestion
+bundle_file: bundle.yaml
+url: https://jujucharms.com/u/bigdata-charmers/kafka-ingestion/1
