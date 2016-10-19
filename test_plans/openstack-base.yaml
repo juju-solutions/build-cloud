@@ -1,3 +1,4 @@
 bundle: bundle:openstack-base
 bundle_name: openstack-base
 test_label: orangebox-test
+url: https://jujucharms.com/openstack-base/
