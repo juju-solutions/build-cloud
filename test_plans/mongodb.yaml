@@ -1,0 +1,3 @@
+bundle: cs:~marcoceppi/mongodb
+bundle_name: mongodb
+url: https://jujucharms.com/u/marcoceppi/mongodb
