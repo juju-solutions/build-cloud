@@ -1,0 +1,7 @@
+bundle: bundle:hadoop-spark
+benchmark:
+    resourcemanager:
+        nnbench
+bundle_name: hadoop-spark
+bundle_file: bundle.yaml
+https://jujucharms.com/hadoop-spark/
