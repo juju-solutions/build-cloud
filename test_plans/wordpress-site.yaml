@@ -1,0 +1,4 @@
+bundle: bundle:~arosales/wordpress-site
+bundle_name: wordpress-site
+bundle_file: bundle.yaml
+url: https://jujucharms.com/u/arosales/wordpress-site
