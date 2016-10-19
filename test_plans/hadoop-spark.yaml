@@ -4,4 +4,4 @@ benchmark:
         nnbench
 bundle_name: hadoop-spark
 bundle_file: bundle.yaml
-https://jujucharms.com/hadoop-spark/
+url: https://jujucharms.com/hadoop-spark/
