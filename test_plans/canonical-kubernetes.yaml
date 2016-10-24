@@ -1,4 +1,4 @@
-bundle: bundle:~lazypower/beef-wellington-1
+bundle: bundle:canonical-kubernetes
 bundle_name: canonical-kubernetes
 bundle_file: bundle.yaml
 url: https://jujucharms.com/canonical-kubernetes
