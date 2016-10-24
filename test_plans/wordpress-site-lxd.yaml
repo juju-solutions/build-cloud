@@ -1,0 +1,4 @@
+bundle: bundle:~juju-qa/wordpress-site
+bundle_name: wordpress-site-lxd
+bundle_file: wordpress-site-lxd.yaml
+url: https://jujucharms.com/u/juju-qa/wordpress-site

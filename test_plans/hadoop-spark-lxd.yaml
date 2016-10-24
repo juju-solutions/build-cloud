@@ -1,0 +1,7 @@
+bundle: bundle:~/juju-qa/hadoop-spark
+benchmark:
+    resourcemanager:
+        nnbench
+bundle_name: hadoop-spark-lxd
+bundle_file: hadoop-spark-lxd.yaml
+url: https://jujucharms.com/u/juju-qa/hadoop-spark/

@@ -1,0 +1,4 @@
+bundle: bundle:~juju-qa/wiki-simple
+bundle_name: wiki-simple-lxd
+bundle_file: wiki-simple-lxd.yaml
+url: https://jujucharms.com/u/juju-qa/wiki-simple/

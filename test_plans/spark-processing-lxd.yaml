@@ -1,0 +1,7 @@
+bundle: bundle:~juju-qa/spark-processing
+benchmark:
+    spark:
+        pagerank
+bundle_name: spark-processing-lxd
+bundle_file: spark-processing-lxd.yaml
+url: https://jujucharms.com/u/juju-qa/spark-processing/
