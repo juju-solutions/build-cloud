@@ -1,4 +1,4 @@
 bundle: bundle:openstack-base
-bundle_name: openstack-base
+bundle_name: "openstack-base (OB)"
 test_label: orangebox-test
 url: https://jujucharms.com/openstack-base/
