@@ -42,7 +42,7 @@ class JujuClient:
                 run_command(
                     '{} bootstrap --show-log {} {} --config '
                     'test-mode=true --default-model {} --no-gui{}'.format(
-                            self.juju, controller, cloud, controller,
+                            self.juju, cloud, controller, controller,
                             args))
             except subprocess.CalledProcessError:
                 logging.error('Bootstrapping failed on {}'.format(
