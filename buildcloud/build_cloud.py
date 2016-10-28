@@ -15,7 +15,7 @@ from buildcloud.utility import (
     copytree_force,
     ensure_dir,
     get_juju_home,
-    rename_env,
+    generate_controller_names,
     run_command,
     temp_dir,
 )
@@ -111,15 +111,11 @@ def env(args):
                         os.path.join(ssh_dir, 'id_rsa'))
         ssh_path = os.path.join(tmp, 'ssh')
 
-        new_names = []
         if args.controllers_bootstrapped:
             new_names = args.controllers
         else:
-            for controller in args.controllers:
-                prefix = 'cwr-'
-                name = rename_env(controller, prefix, os.path.join(
-                    tmp_juju_home, 'environments.yaml'))
-                new_names.append(name)
+            new_names = generate_controller_names(args.controllers)
+
         host = Host(tmp_juju_home=tmp_juju_home,
                     juju_repository=juju_repository, test_results=test_results,
                     tmp=tmp, ssh_path=ssh_path, root=root,

@@ -78,6 +78,17 @@ def copytree_force(src, dst, ignore=None):
     copytree(src, dst, ignore=ignore)
 
 
+def generate_controller_names(controllers):
+    names = []
+    prefix = 'cwr-'
+    for name in controllers:
+        if name.startswith('cwr-'):
+            names.append(name)
+        else:
+            names.append('{}{}'.format(prefix, name))
+    return names
+
+
 def rename_env(from_env, to_env, env_path):
     with open(env_path, 'r') as f:
         env = yaml.load(f)
@@ -112,7 +123,7 @@ def cloud_from_env(env):
         return 'google/europe-west1'
     if 'joyent' in env.lower():
         return 'joyent/us-sw-1'
-    if 'power8' in env.lower():
+    if 'power8' in env.lower() or env == 'borbein-maas':
         return 'borbein-maas'
     if 'ob-maas' in env.lower():
         return 'ob-maas'
