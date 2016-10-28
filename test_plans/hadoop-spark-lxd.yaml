@@ -4,4 +4,5 @@ benchmark:
         nnbench
 bundle_name: hadoop-spark-lxd
 bundle_file: hadoop-spark-lxd.yaml
+test_label: cwr-maas-power8
 url: https://jujucharms.com/u/juju-qa/hadoop-spark/

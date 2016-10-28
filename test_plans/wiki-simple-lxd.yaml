@@ -1,4 +1,5 @@
 bundle: bundle:~juju-qa/wiki-simple
 bundle_name: wiki-simple-lxd
 bundle_file: wiki-simple-lxd.yaml
+test_label: cwr-maas-power8
 url: https://jujucharms.com/u/juju-qa/wiki-simple/

@@ -113,19 +113,20 @@ def generate_test_id():
 
 
 def cloud_from_env(env):
-    if 'aws' in env.lower():
-        if 'china' in env.lower():
+    env = env.lower()
+    if 'aws' in env:
+        if 'china' in env:
             return 'aws-china'
         return 'aws/us-west-1'
-    if 'azure' in env.lower():
+    if 'azure' in env:
         return 'azure/westus'
-    if 'gce' in env.lower() or 'google' in env.lower():
+    if 'gce' in env or 'google' in env:
         return 'google/europe-west1'
-    if 'joyent' in env.lower():
+    if 'joyent' in env:
         return 'joyent/us-sw-1'
-    if 'power8' in env.lower() or 'borbein-maas' in env.lower():
+    if 'power8' in env or 'borbein-maas' in env:
         return 'borbein-maas'
-    if 'ob-maas' in env.lower():
+    if 'ob-maas' in env or 'maas-ob' in env:
         return 'ob-maas'
     return None
 

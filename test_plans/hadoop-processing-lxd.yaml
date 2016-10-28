@@ -4,4 +4,5 @@ benchmark:
         terasort
 bundle_name: hadoop-processing-lxd
 bundle_file: hadoop-processing-lxd.yaml
+test_label: cwr-maas-power8
 url: https://jujucharms.com/u/juju-qa/hadoop-processing
