@@ -35,7 +35,7 @@ class JujuClient:
                         self.bootstrap_constraints))
             cloud = cloud_from_env(controller)
             if cloud is None:
-                raise ValueError('Unknown cloud: {}'.format(cloud))
+                raise ValueError('Unknown cloud: {}'.format(controller))
             self.host.controllers[i] = self.get_model(controller)
             args = ' {}'.format(' '.join(args)) if args else ''
             try:

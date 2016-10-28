@@ -123,7 +123,7 @@ def cloud_from_env(env):
         return 'google/europe-west1'
     if 'joyent' in env.lower():
         return 'joyent/us-sw-1'
-    if 'power8' in env.lower() or env == 'borbein-maas':
+    if 'power8' in env.lower() or 'borbein-maas' in env.lower():
         return 'borbein-maas'
     if 'ob-maas' in env.lower():
         return 'ob-maas'
