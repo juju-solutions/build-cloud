@@ -6,6 +6,7 @@ import yaml
 
 from buildcloud.utility import (
     copytree_force,
+    generate_controller_names,
     rename_env,
     run_command,
     temp_dir,
@@ -81,6 +82,12 @@ class TestUtility(TestCase):
             expected_env = {'environments': {'cwr-old-env': {
                 'access-key': 'my_access_key'}}}
             self.assertEqual(new_env, expected_env)
+
+    def test_generate_controller_names(self):
+        names = ['gce', 'cwr-aws']
+        new_names = generate_controller_names(names)
+        expected = ['cwr-gce', 'cwr-aws']
+        self.assertEqual(new_names, expected)
 
 
 class FakeProc:
