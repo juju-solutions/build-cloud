@@ -62,6 +62,11 @@ def get_test_plans(args):
         yield test_plan
 
 
+def load_test_plan(test_plan):
+    with open(test_plan) as f:
+        return yaml.safe_load(f)
+
+
 def get_credentials(args):
     if None in (args.user, args.password):
         raise ValueError(
@@ -90,7 +95,11 @@ def build_jobs(credentials, test_plans, args):
     jenkins = Jenkins('http://juju-ci.vapour.ws:8080', *credentials)
     for test_plan in test_plans:
         test_id = generate_test_id()
-        for controller in args.controllers:
+        test_plan_content = load_test_plan(test_plan)
+        test_label = test_plan_content.get('test_label')
+        if test_label and isinstance(test_label, str):
+            test_label = [test_label]
+        for controller in test_label or args.controllers:
             job_name = get_job_name(controller)
             parameter = make_parameters(test_plan, args, controller, test_id)
             jenkins.build_job(job_name, parameter, token=args.cwr_test_token)

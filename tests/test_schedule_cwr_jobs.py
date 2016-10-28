@@ -71,13 +71,15 @@ class TestSchedule(TestCase):
         self.assertEqual(cred.user, 'foo')
         self.assertEqual(cred.password, 'bar')
 
-    def fake_parameters(self, test_dir, count=1, ext='.yaml'):
+    def fake_parameters(self, test_dir, count=1, ext='.yaml', test_label=None):
         test_plan = os.path.join(test_dir, 'test' + str(count) + ext)
         plan = {
             'bundle': 'make life easy',
             'bundle_name': 'make_life_easy',
             'bundle_file': ''
         }
+        if test_label:
+            plan['test_label'] = test_label
         with open(test_plan, 'w') as f:
             yaml.dump(plan, f)
         return test_plan
@@ -133,6 +135,48 @@ class TestSchedule(TestCase):
                      'bundle_name': 'make_life_easy',
                      'test_id': '2',
                      'test_plan': test_plan2
+                 },
+                 token='fake')
+        ]
+        self.assertEqual(jenkins_mock.return_value.build_job.mock_calls, calls)
+
+    def test_build_jobs_test_label(self):
+        credentials = Credentials('joe', 'pass')
+        args = Namespace(cwr_test_token='fake',
+                         controllers=['default-aws', 'default-gce'],
+                         test_plan_dir='')
+        with patch('buildcloud.schedule_cwr_jobs.Jenkins',
+                   autospec=True) as jenkins_mock:
+            with patch('buildcloud.schedule_cwr_jobs.generate_test_id',
+                       side_effect=['1', '2', '3', '4']) as gti_mock:
+                with temp_dir() as test_dir:
+                    args.test_plan_dir = test_dir
+                    test_plan1 = os.path.join(test_dir, 'test1.yaml')
+                    test_plan2 = os.path.join(test_dir, 'test2.yaml')
+                    self.fake_parameters(test_dir, test_label='cwr-aws')
+                    self.fake_parameters(test_dir, 2, test_label='cwr-gce')
+                    test_plans = [test_plan1, test_plan2]
+                    build_jobs(credentials, test_plans, args)
+        jenkins_mock.assert_called_once_with(
+            'http://juju-ci.vapour.ws:8080', 'joe', 'pass')
+        self.assertEqual(gti_mock.mock_calls, [call(), call()])
+        calls = [
+            call('cwr-aws',
+                 {
+                     'controllers': 'cwr-aws',
+                     'test_label': 'cwr-aws',
+                     'test_id': '1',
+                     'test_plan': test_plan1,
+                     'bundle_name': 'make_life_easy',
+                 },
+                 token='fake'),
+            call('cwr-gce',
+                 {
+                     'controllers': 'cwr-gce',
+                     'test_label': 'cwr-gce',
+                     'test_id': '2',
+                     'test_plan': test_plan2,
+                     'bundle_name': 'make_life_easy',
                  },
                  token='fake')
         ]

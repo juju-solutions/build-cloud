@@ -28,6 +28,9 @@ def parse_args(argv=None):
     parser.add_argument(
         'test_plan', help='File path to test plan.')
     parser.add_argument(
+        '--controllers_bootstrapped', action='store_true',
+        help="If set, it won't bootstrap the controllers")
+    parser.add_argument(
         '--juju-path', help='Path to juju.', default='juju')
     parser.add_argument(
         '--bundle-file',
@@ -46,6 +49,23 @@ def parse_args(argv=None):
                         help='Bootstrap machine constraints')
     parser.add_argument('--constraints',
                         help='Model constraints', default='mem=3G')
+    parser.add_argument('--cwr-path',
+                        help='Path to cwr. If path is provided, it will '
+                             'execute it with python')
+
+    # CWR options
+    parser.add_argument('--results-dir',
+                        help="Directory to store the test results.")
+    parser.add_argument('--bucket',
+                        help='Store / find results in this S3 bucket '
+                             'instead of locally')
+    parser.add_argument('--s3-creds',
+                        help='Path to config file containing S3 credentials')
+    parser.add_argument('--results-per-bundle', type=int,
+                        help='Maximum number of results to list per bundle in '
+                             'the index.  Older results will not be listed, '
+                             'but the result reports themselves will be '
+                             'preserved.')
     args = parser.parse_args(argv)
     if args.juju_path != 'juju':
         args.juju_path = os.path.realpath(args.juju_path)
@@ -92,11 +112,14 @@ def env(args):
         ssh_path = os.path.join(tmp, 'ssh')
 
         new_names = []
-        for controller in args.controllers:
-            prefix = 'cwr-'
-            name = rename_env(controller, prefix, os.path.join(
-                tmp_juju_home, 'environments.yaml'))
-            new_names.append(name)
+        if args.controllers_bootstrapped:
+            new_names = args.controllers
+        else:
+            for controller in args.controllers:
+                prefix = 'cwr-'
+                name = rename_env(controller, prefix, os.path.join(
+                    tmp_juju_home, 'environments.yaml'))
+                new_names.append(name)
         host = Host(tmp_juju_home=tmp_juju_home,
                     juju_repository=juju_repository, test_results=test_results,
                     tmp=tmp, ssh_path=ssh_path, root=root,
@@ -123,13 +146,36 @@ def env(args):
         yield host, container
 
 
+def get_cwr_options(args, host):
+    options = []
+    if not args.bucket and not args.results_dir:
+        args.results_dir = host.test_results
+    arg_list = [[args.results_dir, '--results-dir'],
+                [args.bucket, '--bucket'],
+                [args.s3_creds, '--s3-creds'],
+                [True, '--s3-private'],
+                [args.results_per_bundle, '--results-per-bundle'],
+                ]
+    for arg, opt in arg_list:
+        if arg:
+            options.append(opt)
+            if not isinstance(arg, bool):
+                options.append(arg)
+    options = ' '.join(options) if options else ''
+    return options
+
+
 def run_test_without_container(host, args, bootstrapped_controllers):
     bundle_file = ''
     if args.bundle_file:
         bundle_file = '--bundle {}'.format(args.bundle_file)
-    cmd = ('cwr -F -l DEBUG -v {} {} {} --test-id {} --result-output {}'.
-           format(bundle_file, ' '.join(bootstrapped_controllers),
-                  args.test_plan, args.test_id, host.test_results))
+    cwr_options = get_cwr_options(args, host)
+    cwr_path = 'cwr'
+    if args.cwr_path:
+        cwr_path = 'python {}'.format(args.cwr_path)
+    cmd = ('{} -F -l DEBUG -v {} {} {} --test-id {} {}'.
+           format(cwr_path, bundle_file, ' '.join(bootstrapped_controllers),
+                  args.test_plan, args.test_id, cwr_options))
     run_command(cmd)
 
 
@@ -181,6 +227,15 @@ def run_test_with_container(host, container, args, bootstrapped_controllers):
                        ignore=shutil.ignore_patterns('static'))
 
 
+def run_test(host, args, bootstrapped_controllers, container):
+    if args.no_container is True:
+        run_test_without_container(
+            host, args, bootstrapped_controllers)
+    else:
+        run_test_with_container(
+            host, container, args, bootstrapped_controllers)
+
+
 def main():
     args = parse_args()
     log_level = max(logging.WARN - args.verbose * 10, logging.DEBUG)
@@ -190,14 +245,18 @@ def main():
             client = make_client(args.juju_path, host, args.log_dir,
                                  args.bootstrap_constraints,
                                  args.constraints)
-            with client.bootstrap() as bootstrapped_controllers:
-                if bootstrapped_controllers:
-                    if args.no_container is True:
-                        run_test_without_container(
-                            host, args, bootstrapped_controllers)
-                    else:
-                        run_test_with_container(
-                            host, container, args, bootstrapped_controllers)
+            if args.controllers_bootstrapped:
+                logging.info('Using already bootstrapped controller:{}'.format(
+                    args.controllers))
+                run_test(host, args, args.controllers, container)
+            else:
+                logging.info('Bootstrapping: {}'.format(args.controllers))
+                with client.bootstrap() as bootstrapped_controllers:
+                    logging.info('Bootstrapped: {}'.format(
+                        bootstrapped_controllers))
+                    if bootstrapped_controllers:
+                        run_test(host, args, bootstrapped_controllers,
+                                 container)
 
 
 if __name__ == '__main__':
