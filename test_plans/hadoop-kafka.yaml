@@ -1,7 +1,7 @@
-bundle: bundle:~bigdata-charmers/hadoop-kafka-2
+bundle: bundle:hadoop-kafka
 benchmark:
     resourcemanager:
-        mrbench
+        terasort
 bundle_name: hadoop-kafka
 bundle_file: bundle.yaml
-url: https://jujucharms.com/u/bigdata-charmers/hadoop-kafka/2
+url: https://jujucharms.com/hadoop-kafka
