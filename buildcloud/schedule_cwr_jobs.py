@@ -84,7 +84,7 @@ def get_job_name(controller):
         return 'cwr-joyent'
     if 'azure' in controller:
         return 'cwr-azure'
-    if 'power8' in controller:
+    if 'power8' in controller or 'borbein-maas' in controller:
         return 'cwr-maas-power8'
     if 'ob-maas' in controller or 'maas-ob' in controller:
         return 'cwr-maas-ob'
