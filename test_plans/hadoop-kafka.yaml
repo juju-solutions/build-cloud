@@ -1,0 +1,7 @@
+bundle: bundle:~bigdata-charmers/hadoop-kafka-2
+benchmark:
+    resourcemanager:
+        mrbench
+bundle_name: hadoop-kafka
+bundle_file: bundle.yaml
+url: https://jujucharms.com/u/bigdata-charmers/hadoop-kafka/2
