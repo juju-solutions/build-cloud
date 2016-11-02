@@ -128,6 +128,8 @@ def cloud_from_env(env):
         return 'borbein-maas'
     if 'ob-maas' in env or 'maas-ob' in env:
         return 'ob-maas'
+    if 'prodstack' in env:
+        return 'prodstack45'
     return None
 
 
