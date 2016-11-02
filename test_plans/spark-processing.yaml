@@ -1,7 +1,7 @@
 bundle: bundle:spark-processing
 benchmark:
     spark:
-        pagerank
+        svdplusplus
 bundle_name: spark-processing
 bundle_file: bundle.yaml
 url: https://jujucharms.com/spark-processing/
