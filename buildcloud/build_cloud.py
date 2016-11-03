@@ -52,7 +52,10 @@ def parse_args(argv=None):
     parser.add_argument('--cwr-path',
                         help='Path to cwr. If path is provided, it will '
                              'execute it with python')
-
+    # TODO: this should be updated to support a config per controller instead
+    # of a single config for all controllers.
+    parser.add_argument('--config', default='test-mode=true',
+                        help='Specify a controller configuration file')
     # CWR options
     parser.add_argument('--results-dir',
                         help="Directory to store the test results.")
@@ -240,7 +243,7 @@ def main():
         with temp_juju_home(host.tmp_juju_home, args.juju_path):
             client = make_client(args.juju_path, host, args.log_dir,
                                  args.bootstrap_constraints,
-                                 args.constraints)
+                                 args.constraints, args.config)
             if args.controllers_bootstrapped:
                 logging.info('Using already bootstrapped controller:{}'.format(
                     args.controllers))

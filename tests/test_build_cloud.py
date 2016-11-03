@@ -36,6 +36,7 @@ class TestCloudBuild(TestCase):
         expected = Namespace(bootstrap_constraints=None,
                              bucket=None,
                              bundle_file='',
+                             config='test-mode=true',
                              constraints='mem=3G',
                              controllers=['cwr-model'],
                              controllers_bootstrapped=False,
