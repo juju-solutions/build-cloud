@@ -37,11 +37,9 @@ class TestJujuClient(TestCase):
             jc._bootstrap()
         calls = ([
             call('/foo/bar bootstrap --show-log google/europe-west1 gce '
-                 '--config test-mode=true --default-model gce --no-gui '
-                 '--constraints mem=3G'),
-            call('/foo/bar bootstrap --show-log azure/westus azure --config '
-                 'test-mode=true --default-model azure --no-gui '
-                 '--constraints mem=3G')
+                 '--default-model gce --no-gui --constraints mem=3G'),
+            call('/foo/bar bootstrap --show-log azure/westus azure '
+                 '--default-model azure --no-gui --constraints mem=3G')
         ])
         self.assertEqual(jrc_mock.call_args_list, calls)
         self.assertEqual(jc.bootstrapped, ['gce', 'azure'])
@@ -50,18 +48,19 @@ class TestJujuClient(TestCase):
 
     def test__bootstrap_exception(self):
         fake_host = FakeHost()
-        jc = JujuClient('/foo/bar', fake_host, None, constraints='mem=3G')
+        jc = JujuClient('/foo/bar', fake_host, None, constraints='mem=3G',
+                        config='test-mode=true')
         with patch('buildcloud.juju.run_command', autospec=True,
                    side_effect=[None, subprocess.CalledProcessError('', '')]
                    ) as jrc_mock:
             jc._bootstrap()
         calls = ([
             call('/foo/bar bootstrap --show-log google/europe-west1 gce '
-                 '--config test-mode=true --default-model gce --no-gui '
-                 '--constraints mem=3G'),
-            call('/foo/bar bootstrap --show-log azure/westus azure --config '
-                 'test-mode=true --default-model azure --no-gui '
-                 '--constraints mem=3G')
+                 '--default-model gce --no-gui '
+                 '--constraints mem=3G --config test-mode=true'),
+            call('/foo/bar bootstrap --show-log azure/westus azure '
+                 '--default-model azure --no-gui '
+                 '--constraints mem=3G --config test-mode=true')
         ])
         self.assertEqual(jrc_mock.call_args_list, calls)
         self.assertEqual(jc.bootstrapped, ['gce'])
@@ -69,16 +68,16 @@ class TestJujuClient(TestCase):
     def test__bootstrap_bootstrap_constraints(self):
         fake_host = FakeHost()
         jc = JujuClient('/foo/bar', fake_host, None,
-                        bootstrap_constraints='tags=ob')
+                        bootstrap_constraints='tags=ob', config='foo=bar')
         with patch('buildcloud.juju.run_command', autospec=True) as jrc_mock:
             jc._bootstrap()
         calls = ([
             call('/foo/bar bootstrap --show-log google/europe-west1 gce '
-                 '--config test-mode=true --default-model gce --no-gui '
-                 '--bootstrap-constraints tags=ob'),
-            call('/foo/bar bootstrap --show-log azure/westus azure --config '
-                 'test-mode=true --default-model azure --no-gui '
-                 '--bootstrap-constraints tags=ob')
+                 '--default-model gce --no-gui --bootstrap-constraints '
+                 'tags=ob --config foo=bar'),
+            call('/foo/bar bootstrap --show-log azure/westus azure '
+                 '--default-model azure --no-gui --bootstrap-constraints '
+                 'tags=ob --config foo=bar')
         ])
         self.assertEqual(jrc_mock.call_args_list, calls)
         self.assertEqual(jc.bootstrapped, ['gce', 'azure'])
@@ -94,11 +93,11 @@ class TestJujuClient(TestCase):
             jc._bootstrap()
         calls = ([
             call('/foo/bar bootstrap --show-log google/europe-west1 gce '
-                 '--config test-mode=true --default-model gce --no-gui '
+                 '--default-model gce --no-gui '
                  '--constraints mem=2G --bootstrap-constraints tags=ob'),
-            call('/foo/bar bootstrap --show-log azure/westus azure --config '
-                 'test-mode=true --default-model azure --no-gui '
-                 '--constraints mem=2G --bootstrap-constraints tags=ob')
+            call('/foo/bar bootstrap --show-log azure/westus azure '
+                 '--default-model azure --no-gui --constraints mem=2G '
+                 '--bootstrap-constraints tags=ob')
         ])
         self.assertEqual(jrc_mock.call_args_list, calls)
         self.assertEqual(jc.bootstrapped, ['gce', 'azure'])
@@ -112,9 +111,9 @@ class TestJujuClient(TestCase):
             jc._bootstrap()
         calls = ([
             call('/foo/bar bootstrap --show-log google/europe-west1 gce '
-                 '--config test-mode=true --default-model gce --no-gui'),
-            call('/foo/bar bootstrap --show-log azure/westus azure --config '
-                 'test-mode=true --default-model azure --no-gui')])
+                 '--default-model gce --no-gui'),
+            call('/foo/bar bootstrap --show-log azure/westus azure '
+                 '--default-model azure --no-gui')])
         self.assertEqual(jrc_mock.call_args_list, calls)
         self.assertEqual(jc.bootstrapped, ['gce', 'azure'])
         self.assertEqual(jc.host.controllers,
@@ -122,7 +121,7 @@ class TestJujuClient(TestCase):
 
     def test_bootstrap(self):
         fake_host = FakeHost()
-        jc = JujuClient('/foo/bar/juju', fake_host, None)
+        jc = JujuClient('/foo/bar/juju', fake_host, None, config='foo=bar')
         with patch('buildcloud.juju.run_command', autospec=True) as jrc_mock:
             with patch.object(jc, 'copy_remote_logs', autospec=True
                               ) as crl_mock:
@@ -132,9 +131,9 @@ class TestJujuClient(TestCase):
         calls = ([
             call('/foo/bar/juju --version'),
             call('/foo/bar/juju bootstrap --show-log google/europe-west1 gce '
-                 '--config test-mode=true --default-model gce --no-gui'),
+                 '--default-model gce --no-gui --config foo=bar'),
             call('/foo/bar/juju bootstrap --show-log azure/westus azure '
-                 '--config test-mode=true --default-model azure --no-gui')])
+                 '--default-model azure --no-gui --config foo=bar')])
         self.assertEqual(jrc_mock.call_args_list, calls)
         crl_mock.assert_called_once_with()
         d_mock.assert_called_once_with()
@@ -155,9 +154,9 @@ class TestJujuClient(TestCase):
         calls = ([
             call('/foo/bar/juju --version'),
             call('/foo/bar/juju bootstrap --show-log google/europe-west1 gce '
-                 '--config test-mode=true --default-model gce --no-gui'),
+                 '--default-model gce --no-gui'),
             call('/foo/bar/juju bootstrap --show-log azure/westus azure '
-                 '--config test-mode=true --default-model azure --no-gui')])
+                 '--default-model azure --no-gui')])
         self.assertEqual(jrc_mock.call_args_list, calls)
         crl_mock.assert_called_once_with()
         d_mock.assert_called_once_with()

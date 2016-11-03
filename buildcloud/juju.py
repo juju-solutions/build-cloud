@@ -16,7 +16,7 @@ __metaclass__ = type
 class JujuClient:
 
     def __init__(self, juju_path, host, log_dir, operator_flag='-m',
-                 bootstrap_constraints=None, constraints=None):
+                 bootstrap_constraints=None, constraints=None, config=None):
         self.juju = juju_path
         self.host = host
         self.log_dir = log_dir
@@ -24,26 +24,32 @@ class JujuClient:
         self.bootstrapped = []
         self.bootstrap_constraints = bootstrap_constraints
         self.constraints = constraints
+        self.config = config
+
+    def get_args(self):
+        args = []
+        if self.constraints:
+            args.append('--constraints {}'.format(self.constraints))
+        if self.bootstrap_constraints:
+            args.append('--bootstrap-constraints {}'.format(
+                    self.bootstrap_constraints))
+        if self.config:
+            args.append('--config {}'.format(self.config))
+        args = ' {}'.format(' '.join(args)) if args else ''
+        return args
 
     def _bootstrap(self):
         for i, controller in enumerate(self.host.controllers):
-            args = []
-            if self.constraints:
-                args.append('--constraints {}'.format(self.constraints))
-            if self.bootstrap_constraints:
-                args.append('--bootstrap-constraints {}'.format(
-                        self.bootstrap_constraints))
+            args = self.get_args()
             cloud = cloud_from_env(controller)
             if cloud is None:
                 raise ValueError('Unknown cloud: {}'.format(controller))
             self.host.controllers[i] = self.get_model(controller)
-            args = ' {}'.format(' '.join(args)) if args else ''
             try:
                 run_command(
-                    '{} bootstrap --show-log {} {} --config '
-                    'test-mode=true --default-model {} --no-gui{}'.format(
-                            self.juju, cloud, controller, controller,
-                            args))
+                    '{} bootstrap --show-log {} {} --default-model {} '
+                    '--no-gui{}'.format(
+                            self.juju, cloud, controller, controller, args))
             except subprocess.CalledProcessError:
                 logging.error('Bootstrapping failed on {}'.format(
                         controller))
@@ -130,7 +136,7 @@ class JujuClient:
 
 
 def make_client(juju_path, host, log_dir, bootstrap_constraints,
-                constraints):
+                constraints, config):
     if juju_path is None:
         juju_path = 'juju'
     version = run_command('{} --version'.format(juju_path)).strip()
@@ -139,6 +145,6 @@ def make_client(juju_path, host, log_dir, bootstrap_constraints,
     elif version.startswith('2.'):
         return JujuClient(juju_path, host, log_dir=log_dir,
                           bootstrap_constraints=bootstrap_constraints,
-                          constraints=constraints)
+                          constraints=constraints, config=config)
     else:
         raise ValueError('Unknown juju version')
