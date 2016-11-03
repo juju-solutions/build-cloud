@@ -17,7 +17,8 @@ class TestMakeClient(TestCase):
     def test_make_client(self):
         with patch('buildcloud.juju.run_command', autospec=True,
                    return_value='2.00'):
-            client = make_client('/tmp/juju', 'host', 'logdir', None, None)
+            client = make_client('/tmp/juju', 'host', 'logdir', None, None,
+                                 None)
         self.assertIsInstance(client, JujuClient)
 
     def test_make_client1x(self):
@@ -25,7 +26,7 @@ class TestMakeClient(TestCase):
                    return_value='1.23'):
             with self.assertRaisesRegexp(
                     ValueError, 'Juju 1.x is not supported'):
-                make_client('/tmp/juju', 'host', 'logdir', None, None)
+                make_client('/tmp/juju', 'host', 'logdir', None, None, None)
 
 
 class TestJujuClient(TestCase):
