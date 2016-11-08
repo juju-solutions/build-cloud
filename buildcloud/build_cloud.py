@@ -145,16 +145,24 @@ def env(args):
         yield host, container
 
 
-def get_cwr_options(args, host):
+def get_cwr_options(args, host, container=None):
     options = []
     if not args.bucket and not args.results_dir:
         args.results_dir = host.test_results
-    arg_list = [[args.results_dir, '--results-dir'],
-                [args.bucket, '--bucket'],
-                [args.s3_creds, '--s3-creds'],
-                [True, '--s3-private'],
-                [args.results_per_bundle, '--results-per-bundle'],
-                ]
+    s3_creds = args.s3_creds
+    if not args.no_container and args.s3_creds:
+        if container is None:
+            raise ValueError('Container is not set.')
+        s3_creds = os.path.join(
+            container.home, os.path.basename(args.s3_creds))
+    arg_list = [
+        [args.bundle_file, '--bundle'],
+        [args.results_dir, '--results-dir'],
+        [args.bucket, '--bucket'],
+        [s3_creds, '--s3-creds'],
+        [True, '--s3-private'],
+        [args.results_per_bundle, '--results-per-bundle'],
+    ]
     for arg, opt in arg_list:
         if arg:
             options.append(opt)
@@ -164,17 +172,20 @@ def get_cwr_options(args, host):
     return options
 
 
-def run_test_without_container(host, args, bootstrapped_controllers):
-    bundle_file = ''
-    if args.bundle_file:
-        bundle_file = '--bundle {}'.format(args.bundle_file)
-    cwr_options = get_cwr_options(args, host)
+def get_cwr_path(args):
     cwr_path = 'cwr'
     if args.cwr_path:
         cwr_path = 'python {}'.format(args.cwr_path)
-    cmd = ('{} -F -l DEBUG -v {} {} {} --test-id {} {}'.
-           format(cwr_path, bundle_file, ' '.join(bootstrapped_controllers),
-                  args.test_plan, args.test_id, cwr_options))
+    return cwr_path
+
+
+def run_test_without_container(host, args, bootstrapped_controllers):
+    logging.debug('Running test without a container.')
+    cwr_options = get_cwr_options(args, host)
+    cwr_path = get_cwr_path(args)
+    cmd = ('{} -F -l DEBUG -v {} {} --test-id {} {}'.
+           format(cwr_path, ' '.join(bootstrapped_controllers), args.test_plan,
+                  args.test_id, cwr_options))
     run_command(cmd)
 
 
@@ -182,22 +193,32 @@ def run_test_with_container(host, container, args, bootstrapped_controllers):
     logging.debug("Host data: ", host)
     logging.debug("Container data: ", container)
     run_command('sudo docker pull {}'.format(container.name))
+    s3_creds = ''
+    if args.s3_creds:
+        s3_creds = '-v {}:{} '.format(
+            args.s3_creds,
+            os.path.join(container.home, os.path.basename(args.s3_creds)))
     container_options = (
         '--rm '
         '-u {} '
-        '-e Home={} '
+        '-e HOME={} '
         '-e JUJU_HOME={} '
+        '-e JUJU_DATA={} '
+        '-e PYTHONPATH={} '
         '-w {} '
         '-v {}:{} '   # Test result location
         '-v {}:{} '   # Temp Juju home
-        '-v {}/.deployer-store-cache:{}.deployer-store-cache '
+        '-v {}/.deployer-store-cache:{}/.deployer-store-cache '
         '-v {}:{} '   # Repository location
         '-v {}:{} '   # Temp location.
         '-v {}:{} '   # Test plan
+        '{}'          # S3 creds
         '-v {}:{} '   # ssh path
         '-t {} '.format(container.user,
                         container.home,
                         container.juju_home,
+                        container.juju_home,
+                        os.path.join(container.home, 'cloud-weather-report'),
                         container.home,
                         host.test_results, container.test_results,
                         host.tmp_juju_home, container.juju_home,
@@ -205,21 +226,23 @@ def run_test_with_container(host, container, args, bootstrapped_controllers):
                         host.juju_repository, container.juju_repository,
                         host.tmp, host.tmp,
                         os.path.dirname(args.test_plan), container.test_plans,
+                        s3_creds,
                         host.ssh_path, container.ssh_home,
                         container.name))
     test_plan = os.path.join(
         container.test_plans, os.path.basename(args.test_plan))
-    bundle_file = ''
-    if args.bundle_file:
-        bundle_file = '--bundle {}'.format(args.bundle_file)
+    cwr_options = get_cwr_options(args, host, container=container)
+    cwr_path = os.path.join(
+        container.home, 'cloud-weather-report/cloudweatherreport/run.py')
     shell_options = (
-        'sudo cwr -F -l DEBUG -v {} {} {} --test-id {}'.format(
-            bundle_file, ' '.join(bootstrapped_controllers),
-            test_plan, args.test_id))
-    command = ('sudo docker run {} sh -c'.format(
+        'sudo juju --version && sudo -HE env PATH=$PATH PYTHONPATH=$PYTHONPATH'
+        ' python2 {} -F -l DEBUG -v {} {} --test-id {} {}'.format(
+            cwr_path, ' '.join(bootstrapped_controllers), test_plan,
+            args.test_id, cwr_options))
+    command = ("sudo docker run {} sh -c ".format(
         container_options).split() + [shell_options])
     run_command(command)
-    print("User id: {} Group id: {}".format(os.getegid(), os.getpgrp()))
+
     # Copy logs
     if args.log_dir:
         copytree_force(host.test_results, args.log_dir,
