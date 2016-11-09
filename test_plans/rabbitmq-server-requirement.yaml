@@ -1,0 +1,3 @@
+bundle: cs:~james-page/rabbitmq-server-requirement
+bundle_name: rabbitmq-server-requirement
+url: https://jujucharms.com/u/james-page/rabbitmq-server-requirement
