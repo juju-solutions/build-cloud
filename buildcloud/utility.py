@@ -52,8 +52,7 @@ def run_command(command, verbose=True):
     proc = subprocess.Popen(command, stdout=subprocess.PIPE)
     output = ''
     while proc.poll() is None:
-        status = proc.stdout.readline()
-        if status:
+        for status in proc.stdout:
             logging.info(status.rstrip())
             output += status
     if proc.returncode != 0 and proc.returncode is not None:
