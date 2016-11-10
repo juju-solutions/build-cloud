@@ -1,8 +1,0 @@
-bundle: bundle:~juju-qa/kafka-ingestion
-benchmark:
-    resourcemanager:
-        mrbench
-bundle_name: kafka-ingestion-lxd
-bundle_file: kafka-ingestion-lxd.yaml
-test_label: cwr-maas-power8
-url: https://jujucharms.com/u/juju-qa/kafka-ingestion
