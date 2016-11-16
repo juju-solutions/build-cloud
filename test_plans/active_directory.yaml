@@ -1,0 +1,3 @@
+bundle: cs:~cloudbaseit/active-directory
+bundle_name: active-directory
+url: https://jujucharms.com/u/cloudbaseit/active-directory
