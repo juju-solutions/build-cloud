@@ -1,3 +1,4 @@
 bundle: cs:~cloudbaseit/active-directory
 bundle_name: active-directory
+test_label: cwr-azure
 url: https://jujucharms.com/u/cloudbaseit/active-directory
