@@ -1,5 +1,0 @@
-bundle: bundle:~juju-qa/ceph-with-dash
-bundle_name: ceph-with-dash-lxd
-bundle_file: ceph-with-dash-lxd.yaml
-test_label: cwr-maas-power8
-url: https://jujucharms.com/u/juju-qa/ceph-with-dash
