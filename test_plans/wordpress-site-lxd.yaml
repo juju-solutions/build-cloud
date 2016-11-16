@@ -1,5 +1,0 @@
-bundle: bundle:~juju-qa/wordpress-site
-bundle_name: wordpress-site-lxd
-bundle_file: wordpress-site-lxd.yaml
-test_label: cwr-maas-power8
-url: https://jujucharms.com/u/juju-qa/wordpress-site
