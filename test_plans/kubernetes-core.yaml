@@ -1,4 +1,0 @@
-bundle: bundle:kubernetes-core
-bundle_name: kubernetes-core
-bundle_file: bundle.yaml
-url: https://jujucharms.com/kubernetes-core
