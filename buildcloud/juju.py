@@ -85,6 +85,9 @@ class JujuClient:
     def get_model(self, controller):
         return '{}:{}'.format(controller, controller)
 
+    def get_controller_model(self, controller):
+        return '{}:controller'.format(controller)
+
     def copy_remote_logs(self):
         logging.info("Gathering remote logs.")
         logs = [
@@ -94,38 +97,40 @@ class JujuClient:
         ]
         for controller in self.bootstrapped:
             model = self.get_model(controller)
+            controller_model = self.get_controller_model(controller)
             status = self.get_status(model=model)
             machines = yaml.safe_load(status).get('machines')
             if not machines:
                 logging.warn('No machines listed.')
                 continue
             machines = yaml.safe_load(status)['machines'].keys()
-            for machine in machines:
-                for log in logs:
-                    args = '{} ls {}'.format(machine, log)
-                    try:
-                        files = self.run('ssh', args, controller)
-                    except subprocess.CalledProcessError:
-                        logging.warn("Could not list remote files.")
-                        continue
-                    files = files.strip().split()
-                    for f in files:
-                        try:
-                            args = '{} sudo chmod  -Rf go+r {}'.format(
-                                    machine, f)
-                            self.run('ssh', args, model=controller)
-                            basename = '{}--{}'.format(
-                                    controller, os.path.basename(f))
-                            dst_path = os.path.join(self.log_dir, basename)
-                            args = '-- -rC {}:{} {}'.format(
-                                    machine, f, dst_path)
-                            self.run('scp', args, model=controller)
-                        except subprocess.CalledProcessError:
-                            logging.warn(
-                                "Could not get logs for {} {}".format(
-                                        controller, f))
+            self._copy_remote_logs(model, machines, logs)
+            self._copy_remote_logs(controller_model, [0], logs)
         else:
             logging.info('No machine logs to copy.')
+
+    def _copy_remote_logs(self, model, machines, logs):
+        for machine in machines:
+            for log in logs:
+                args = '{} ls {}'.format(machine, log)
+                try:
+                    files = self.run('ssh', args, model)
+                except subprocess.CalledProcessError:
+                    logging.warn("Could not list remote files.")
+                    continue
+                files = files.strip().split()
+                for f in files:
+                    try:
+                        args = '{} sudo chmod  -Rf go+r {}'.format(machine, f)
+                        self.run('ssh', args, model=model)
+                        basename = '{}--{}'.format(
+                            model.replace(':', '-'), os.path.basename(f))
+                        dst_path = os.path.join(self.log_dir, basename)
+                        args = '-- -rC {}:{} {}'.format(machine, f, dst_path)
+                        self.run('scp', args, model=model)
+                    except subprocess.CalledProcessError:
+                        logging.warn(
+                            "Could not get logs for {} {}".format(model, f))
 
     def run(self, command, args='', model=''):
         m = '{} {}'.format(self.operator_flag, model) if model else model
