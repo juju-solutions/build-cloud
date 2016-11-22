@@ -1,3 +1,4 @@
 bundle: cs:~cloudbaseit/mssql-express
 bundle_name: mssql-express
-url: https://jujucharms.com/u/cloudbaseit/mssql-express 
+test_label: cwr-azure
+url: https://jujucharms.com/u/cloudbaseit/mssql-exress
