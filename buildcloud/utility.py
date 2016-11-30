@@ -116,9 +116,9 @@ def cloud_from_env(env):
     if 'aws' in env:
         if 'china' in env:
             return 'aws-china'
-        return 'aws/us-west-1'
+        return 'aws/sa-east-1'
     if 'azure' in env:
-        return 'azure/westus'
+        return 'azure/northeurope'
     if 'gce' in env or 'google' in env:
         return 'google/europe-west1'
     if 'joyent' in env:
