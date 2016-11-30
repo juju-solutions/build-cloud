@@ -200,7 +200,7 @@ def run_test_with_container(host, container, args, bootstrapped_controllers):
             os.path.join(container.home, os.path.basename(args.s3_creds)))
     container_options = (
         '--rm '
-        '--entrypoint bash'  # override jujubox entrypoint
+        '--entrypoint bash '  # override jujubox entrypoint
         '-u {} '
         '-e HOME={} '
         '-e JUJU_HOME={} '
