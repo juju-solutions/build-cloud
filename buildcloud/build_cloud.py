@@ -135,7 +135,7 @@ def env(args):
         container_repository = os.path.join(container_home, 'charm-repo')
         container_test_plans = os.path.join(container_home, 'test_plans')
         container = Container(user=container_user,
-                              name='jujusolutions/cwrbox',
+                              name='seman/cwrbox',
                               home=container_home,
                               ssh_home=container_ssh_home,
                               juju_home=container_juju_home,
