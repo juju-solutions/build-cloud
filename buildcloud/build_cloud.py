@@ -135,7 +135,7 @@ def env(args):
         container_repository = os.path.join(container_home, 'charm-repo')
         container_test_plans = os.path.join(container_home, 'test_plans')
         container = Container(user=container_user,
-                              name='seman/cwrbox',
+                              name='jujusolutions/cwrbox',
                               home=container_home,
                               ssh_home=container_ssh_home,
                               juju_home=container_juju_home,
@@ -200,6 +200,7 @@ def run_test_with_container(host, container, args, bootstrapped_controllers):
             os.path.join(container.home, os.path.basename(args.s3_creds)))
     container_options = (
         '--rm '
+        '--entrypoint bash'  # override jujubox entrypoint
         '-u {} '
         '-e HOME={} '
         '-e JUJU_HOME={} '
@@ -239,7 +240,8 @@ def run_test_with_container(host, container, args, bootstrapped_controllers):
         ' python2 {} -F -l DEBUG -v {} {} --test-id {} {}'.format(
             cwr_path, ' '.join(bootstrapped_controllers), test_plan,
             args.test_id, cwr_options))
-    command = ("sudo docker run {} sh -c ".format(
+    # The '-c [shell_options]' will get passed to to our entrypoint (bash)
+    command = ("sudo docker run {} -c ".format(
         container_options).split() + [shell_options])
     run_command(command)
 
