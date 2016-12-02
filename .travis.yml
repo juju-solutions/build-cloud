@@ -6,4 +6,5 @@ install: "pip install -r requirements.txt"
 # command to run tests
 env:
   - JUJU_HOME=/tmp
+  - BUILD_NUMBER=42
 script: make test
