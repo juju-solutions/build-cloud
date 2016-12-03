@@ -91,7 +91,7 @@ class TestUtility(TestCase):
         self.assertEqual(new_names, expected)
 
     def test_cloud_from_env(self):
-        self.assertEqual(cloud_from_env('cwr-aws'), 'aws/us-west-1')
+        self.assertEqual(cloud_from_env('cwr-aws'), 'aws/sa-east-1')
         self.assertEqual(cloud_from_env('cwr-GCE'), 'google/europe-west1')
         self.assertEqual(cloud_from_env('google'), 'google/europe-west1')
         self.assertEqual(cloud_from_env('cwr-borbein-maas'), 'borbein-maas')

@@ -1,3 +1,4 @@
+flake8
 python-jenkins
 pyyaml
 mock
