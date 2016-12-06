@@ -133,6 +133,7 @@ class TestCloudBuild(TestCase):
             call('sudo docker pull cwrbox'),
             call([
                 'sudo', 'docker', 'run', '--rm',
+                '--entrypoint', 'bash',
                 '-u', 'joe',
                 '-e', 'HOME=/home',
                 '-e', 'JUJU_HOME=/container/.juju',
@@ -149,7 +150,6 @@ class TestCloudBuild(TestCase):
                 '-v', '/host/s3-creds:/home/s3-creds',
                 '-v', '/host/ssh/path:/container/ssh/home',
                 '-t', 'cwrbox',
-                'sh',
                 '-c',
                 'sudo juju --version && sudo -HE env PATH=$PATH '
                 'PYTHONPATH=$PYTHONPATH python2 '
