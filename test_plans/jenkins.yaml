@@ -1,0 +1,3 @@
+bundle: cs:jenkins
+bundle_name: jenkins
+url: https://jujucharms.com/jenkins
