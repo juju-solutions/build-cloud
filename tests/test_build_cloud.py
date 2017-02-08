@@ -10,7 +10,9 @@ from mock import (
 )
 
 from buildcloud.build_cloud import (
+    CONTAINER_NAME,
     get_cwr_options,
+    run_test,
     run_test_with_container,
     run_test_without_container,
     parse_args,
@@ -134,6 +136,7 @@ class TestCloudBuild(TestCase):
             call([
                 'sudo', 'docker', 'run', '--rm',
                 '--entrypoint', 'bash',
+                '--name', CONTAINER_NAME,
                 '-u', 'joe',
                 '-e', 'HOME=/home',
                 '-e', 'JUJU_HOME=/container/.juju',
@@ -161,3 +164,33 @@ class TestCloudBuild(TestCase):
             )
         ]
         self.assertEqual(rc_mock.call_args_list, calls)
+
+    def test_run_test_no_continer(self):
+        args = parse_args(['controller', '/test/test-plan', '--test-id', '2',
+                           '--no-container'])
+        with patch('buildcloud.build_cloud.set_signal', autospec=True
+                   ) as ss_mock:
+            with patch('buildcloud.build_cloud.run_test_without_container',
+                       autospec=True) as rtwc_mock:
+                with patch('buildcloud.build_cloud.run_test_with_container',
+                           autospec=True) as rtoc_mock:
+                    run_test('host', args, 'bootstrapped', 'container',
+                             'client')
+        ss_mock.assert_called_once_with('client', no_container=True)
+        rtwc_mock.assert_called_once_with('host', args, 'bootstrapped')
+        self.assertFalse(rtoc_mock.called)
+
+    def test_run_test(self):
+        args = parse_args(['controller', '/test/test-plan', '--test-id', '2'])
+        with patch('buildcloud.build_cloud.set_signal', autospec=True
+                   ) as ss_mock:
+            with patch('buildcloud.build_cloud.run_test_without_container',
+                       autospec=True) as rtwc_mock:
+                with patch('buildcloud.build_cloud.run_test_with_container',
+                           autospec=True) as rtoc_mock:
+                    run_test('host', args, 'bootstrapped', 'container',
+                             'client')
+        ss_mock.assert_called_once_with('client', no_container=False)
+        rtoc_mock.assert_called_once_with(
+            'host', 'container', args, 'bootstrapped')
+        self.assertFalse(rtwc_mock.called)

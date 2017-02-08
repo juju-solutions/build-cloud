@@ -76,11 +76,7 @@ class JujuClient:
             self._bootstrap()
             yield [self.get_model(x) for x in self.bootstrapped]
         finally:
-            try:
-                self.copy_remote_logs()
-            except subprocess.CalledProcessError:
-                logging.error('Getting logs failed.')
-            self._destroy()
+            self.cleanup()
 
     def get_model(self, controller):
         return '{}:{}'.format(controller, controller)
@@ -138,6 +134,13 @@ class JujuClient:
 
     def get_status(self, model=''):
         return self.run('status --format yaml', model=model)
+
+    def cleanup(self):
+        try:
+            self.copy_remote_logs()
+        except subprocess.CalledProcessError:
+            logging.error('Getting logs failed.')
+        self._destroy()
 
 
 def make_client(juju_path, host, log_dir, bootstrap_constraints,

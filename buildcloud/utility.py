@@ -52,9 +52,13 @@ def run_command(command, verbose=True):
     proc = subprocess.Popen(command, stdout=subprocess.PIPE)
     output = ''
     while proc.poll() is None:
-        for status in proc.stdout:
-            logging.info(status.rstrip())
-            output += status
+        try:
+            for status in proc.stdout:
+                logging.info(status.rstrip())
+                output += status
+        except IOError:
+            # SIGTERM/SIGINT generates io error
+            pass
     if proc.returncode != 0 and proc.returncode is not None:
         output, error = proc.communicate()
         logging.info("ERROR: run_command failed: {}".format(error))

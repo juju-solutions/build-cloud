@@ -3,10 +3,13 @@
 from argparse import ArgumentParser
 from contextlib import contextmanager
 from collections import namedtuple
+from functools import partial
 import logging
 import os
 import shutil
+import signal
 from tempfile import mkdtemp
+from uuid import uuid4
 
 from buildcloud.host import Host
 from buildcloud.juju import make_client
@@ -19,6 +22,9 @@ from buildcloud.utility import (
     run_command,
     temp_dir,
 )
+
+# Assigned a name to the container
+CONTAINER_NAME = 'cwr-{}'.format(uuid4().hex)
 
 
 def parse_args(argv=None):
@@ -201,6 +207,7 @@ def run_test_with_container(host, container, args, bootstrapped_controllers):
     container_options = (
         '--rm '
         '--entrypoint bash '  # override jujubox entrypoint
+        '--name {} '          # Assign a name to the container
         '-u {} '
         '-e HOME={} '
         '-e JUJU_HOME={} '
@@ -215,7 +222,8 @@ def run_test_with_container(host, container, args, bootstrapped_controllers):
         '-v {}:{} '   # Test plan
         '{}'          # S3 creds
         '-v {}:{} '   # ssh path
-        '-t {} '.format(container.user,
+        '-t {} '.format(CONTAINER_NAME,
+                        container.user,
                         container.home,
                         container.juju_home,
                         container.juju_home,
@@ -251,13 +259,34 @@ def run_test_with_container(host, container, args, bootstrapped_controllers):
                        ignore=shutil.ignore_patterns('static'))
 
 
-def run_test(host, args, bootstrapped_controllers, container):
+def run_test(host, args, bootstrapped_controllers, container, client):
+    set_signal(client, no_container=args.no_container)
     if args.no_container is True:
         run_test_without_container(
             host, args, bootstrapped_controllers)
     else:
         run_test_with_container(
             host, container, args, bootstrapped_controllers)
+
+
+def handle_signal(client, no_container, signal, frame):
+    logging.info("Signal detected.")
+    if no_container:
+        logging.info('Cleaning up controllers')
+        client.cleanup()
+    else:
+        logging.info("Cleaning up the container: {}".format(CONTAINER_NAME))
+        run_command('sudo docker stop {}'.format(CONTAINER_NAME))
+        run_command('sudo docker rm {}'.format(CONTAINER_NAME))
+
+
+def set_signal(client, no_container):
+    logging.info("Setting signal for controllers: {} container{}".format(
+        client, no_container))
+    signal.signal(
+        signal.SIGTERM, partial(handle_signal, client, no_container))
+    signal.signal(
+        signal.SIGINT, partial(handle_signal, client, no_container))
 
 
 def main():
@@ -272,7 +301,7 @@ def main():
             if args.controllers_bootstrapped:
                 logging.info('Using already bootstrapped controller:{}'.format(
                     args.controllers))
-                run_test(host, args, args.controllers, container)
+                run_test(host, args, args.controllers, container, client)
             else:
                 logging.info('Bootstrapping: {}'.format(args.controllers))
                 with client.bootstrap() as bootstrapped_controllers:
@@ -280,7 +309,7 @@ def main():
                         bootstrapped_controllers))
                     if bootstrapped_controllers:
                         run_test(host, args, bootstrapped_controllers,
-                                 container)
+                                 container, client)
 
 
 if __name__ == '__main__':
