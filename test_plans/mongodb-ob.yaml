@@ -1,0 +1,4 @@
+bundle: cs:~marcoceppi/mongodb
+bundle_name: "mongodb (OB)"
+test_label: cwr-maas-ob
+url: https://jujucharms.com/u/marcoceppi/mongodb
