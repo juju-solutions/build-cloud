@@ -37,16 +37,18 @@ class TestSchedule(TestCase):
             self.assertEqual(args, expected)
 
     def test_make_parameters(self):
-        args = Namespace(controllers=['default-aws'])
         with temp_dir() as test_dir:
-            test_plan = self.fake_parameters(test_dir)
-            parameters = make_parameters(
-                test_plan, args, 'default-aws', '1234')
+            test_plan = self.fake_parameters(
+                test_dir, bucket='foo-bucket', results_dir='foo-results')
+            parameters = make_parameters(test_plan, 'default-aws', '1234')
         expected = {
+            'bucket': 'foo-bucket',
             'controllers': 'default-aws',
             'bundle_name': 'make_life_easy',
+            'results_dir': 'foo-results',
             'test_id': '1234',
-            'test_plan': test_plan}
+            'test_plan': test_plan,
+        }
         self.assertEqual(parameters, expected)
 
     def test_get_test_plans(self):
@@ -71,13 +73,19 @@ class TestSchedule(TestCase):
         self.assertEqual(cred.user, 'foo')
         self.assertEqual(cred.password, 'bar')
 
-    def fake_parameters(self, test_dir, count=1, ext='.yaml', test_label=None):
+    def fake_parameters(self, test_dir, count=1, ext='.yaml', test_label=None,
+                        bucket=None, results_dir=None):
         test_plan = os.path.join(test_dir, 'test' + str(count) + ext)
         plan = {
             'bundle': 'make life easy',
             'bundle_name': 'make_life_easy',
-            'bundle_file': ''
+            'bundle_file': '',
+            'bucket': bucket,
+            'results_dir': results_dir,
         }
+        # Remove empty values
+        plan = {k: v for k, v in plan.items() if v}
+
         if test_label:
             plan['test_label'] = test_label
         with open(test_plan, 'w') as f:
@@ -98,7 +106,8 @@ class TestSchedule(TestCase):
                     test_plan1 = os.path.join(test_dir, 'test1.yaml')
                     test_plan2 = os.path.join(test_dir, 'test2.yaml')
                     self.fake_parameters(test_dir)
-                    self.fake_parameters(test_dir, 2)
+                    self.fake_parameters(
+                        test_dir, 2, bucket='foo', results_dir='bar')
                     test_plans = [test_plan1, test_plan2]
                     build_jobs(credentials, test_plans, args)
         jenkins_mock.assert_called_once_with(
@@ -126,7 +135,9 @@ class TestSchedule(TestCase):
                      'controllers': 'default-aws',
                      'bundle_name': 'make_life_easy',
                      'test_id': '2',
-                     'test_plan': test_plan2
+                     'test_plan': test_plan2,
+                     'bucket': 'foo',
+                     'results_dir': 'bar',
                  },
                  token='fake'),
             call('cwr-gce',
@@ -134,7 +145,9 @@ class TestSchedule(TestCase):
                      'controllers': 'default-gce',
                      'bundle_name': 'make_life_easy',
                      'test_id': '2',
-                     'test_plan': test_plan2
+                     'test_plan': test_plan2,
+                     'bucket': 'foo',
+                     'results_dir': 'bar',
                  },
                  token='fake')
         ]

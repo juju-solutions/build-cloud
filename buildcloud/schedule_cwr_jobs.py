@@ -37,7 +37,7 @@ def parse_args(argv=None):
     return args
 
 
-def make_parameters(test_plan, args, controller, test_id):
+def make_parameters(test_plan, controller, test_id):
     with open(test_plan, 'r') as f:
         plan = yaml.load(f)
     parameters = {
@@ -47,6 +47,8 @@ def make_parameters(test_plan, args, controller, test_id):
         'bundle_file': plan.get('bundle_file'),
         'test_id': test_id,
         'test_label': plan.get('test_label'),
+        'bucket': plan.get('bucket'),
+        'results_dir': plan.get('results_dir'),
     }
     # Remove empty values
     parameters = {k: v for k, v in parameters.items() if v}
@@ -101,7 +103,7 @@ def build_jobs(credentials, test_plans, args):
             test_label = [test_label]
         for controller in test_label or args.controllers:
             job_name = get_job_name(controller)
-            parameter = make_parameters(test_plan, args, controller, test_id)
+            parameter = make_parameters(test_plan, controller, test_id)
             jenkins.build_job(job_name, parameter, token=args.cwr_test_token)
 
 
