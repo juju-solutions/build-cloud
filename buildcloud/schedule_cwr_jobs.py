@@ -49,6 +49,7 @@ def make_parameters(test_plan, controller, test_id):
         'test_label': plan.get('test_label'),
         'bucket': plan.get('bucket'),
         'results_dir': plan.get('results_dir'),
+        's3_private': plan.get('s3_private'),
     }
     # Remove empty values
     parameters = {k: v for k, v in parameters.items() if v}
