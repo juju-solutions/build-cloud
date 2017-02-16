@@ -39,7 +39,8 @@ class TestSchedule(TestCase):
     def test_make_parameters(self):
         with temp_dir() as test_dir:
             test_plan = self.fake_parameters(
-                test_dir, bucket='foo-bucket', results_dir='foo-results')
+                test_dir, bucket='foo-bucket', results_dir='foo-results',
+                s3_private=True)
             parameters = make_parameters(test_plan, 'default-aws', '1234')
         expected = {
             'bucket': 'foo-bucket',
@@ -48,6 +49,7 @@ class TestSchedule(TestCase):
             'results_dir': 'foo-results',
             'test_id': '1234',
             'test_plan': test_plan,
+            's3_private': True,
         }
         self.assertEqual(parameters, expected)
 
@@ -74,7 +76,7 @@ class TestSchedule(TestCase):
         self.assertEqual(cred.password, 'bar')
 
     def fake_parameters(self, test_dir, count=1, ext='.yaml', test_label=None,
-                        bucket=None, results_dir=None):
+                        bucket=None, results_dir=None, s3_private=None):
         test_plan = os.path.join(test_dir, 'test' + str(count) + ext)
         plan = {
             'bundle': 'make life easy',
@@ -82,6 +84,7 @@ class TestSchedule(TestCase):
             'bundle_file': '',
             'bucket': bucket,
             'results_dir': results_dir,
+            's3_private': s3_private,
         }
         # Remove empty values
         plan = {k: v for k, v in plan.items() if v}
@@ -107,7 +110,8 @@ class TestSchedule(TestCase):
                     test_plan2 = os.path.join(test_dir, 'test2.yaml')
                     self.fake_parameters(test_dir)
                     self.fake_parameters(
-                        test_dir, 2, bucket='foo', results_dir='bar')
+                        test_dir, 2, bucket='foo', results_dir='bar',
+                        s3_private=True)
                     test_plans = [test_plan1, test_plan2]
                     build_jobs(credentials, test_plans, args)
         jenkins_mock.assert_called_once_with(
@@ -138,6 +142,7 @@ class TestSchedule(TestCase):
                      'test_plan': test_plan2,
                      'bucket': 'foo',
                      'results_dir': 'bar',
+                     's3_private': True,
                  },
                  token='fake'),
             call('cwr-gce',
@@ -148,6 +153,7 @@ class TestSchedule(TestCase):
                      'test_plan': test_plan2,
                      'bucket': 'foo',
                      'results_dir': 'bar',
+                     's3_private': True,
                  },
                  token='fake')
         ]
