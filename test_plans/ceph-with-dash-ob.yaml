@@ -1,4 +1,0 @@
-bundle: bundle:~canonical-storage/ceph-with-dash
-bundle_name: "ceph-with-dash (OB)"
-test_label: cwr-maas-ob
-url: https://jujucharms.com/u/canonical-storage/ceph-with-dash
