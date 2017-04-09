@@ -114,7 +114,6 @@ def build_jobs(credentials, test_plans, args):
                 logging.error('Can not build {}'.format(job_name))
 
 
-
 def main():
     args = parse_args()
     credentials = get_credentials(args)
