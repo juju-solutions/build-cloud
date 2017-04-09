@@ -2,7 +2,9 @@
 
 from argparse import ArgumentParser
 from collections import namedtuple
+import logging
 import os
+from urllib2 import HTTPError
 import yaml
 
 from jenkins import Jenkins
@@ -105,7 +107,12 @@ def build_jobs(credentials, test_plans, args):
         for controller in test_label or args.controllers:
             job_name = get_job_name(controller)
             parameter = make_parameters(test_plan, controller, test_id)
-            jenkins.build_job(job_name, parameter, token=args.cwr_test_token)
+            try:
+                jenkins.build_job(
+                    job_name, parameter, token=args.cwr_test_token)
+            except HTTPError:
+                logging.error('Can not build {}'.format(job_name))
+
 
 
 def main():
